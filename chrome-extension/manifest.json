@@ -2,7 +2,12 @@
   "manifest_version": 3,
   "name": "YouTube Trust Checker",
   "version": "1.0",
-  "permissions": ["activeTab", "storage", "https://*.youtube.com/*"],
+  "description": "YouTube 영상 신뢰도 분석 도구",
+  "permissions": ["activeTab", "scripting", "storage", "audioCapture"],
+  "host_permissions": [
+    "https://*.youtube.com/*",
+    "https://your-backend-domain.com/*"
+  ],
   "background": {
     "service_worker": "src/background/service.js",
     "type": "module"
@@ -10,7 +15,30 @@
   "content_scripts": [
     {
       "matches": ["https://*.youtube.com/watch*"],
-      "js": ["src/content/inject.js"]
+      "js": ["src/content/content.js"],
+      "run_at": "document_idle"
     }
-  ]
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["src/content/inject.js", "src/content/content.js"],
+      "matches": ["https://*.youtube.com/*"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }
