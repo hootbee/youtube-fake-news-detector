@@ -1,10 +1,10 @@
 const { exec } = require("child_process");
 const path = require("path");
+require("dotenv").config();
 
 async function transcribeAudioLocal(filePath) {
   const pythonScript = path.join(__dirname, "../python/transcribe.py");
-  const pythonPath =
-    "/Users/leejunhyeong/Desktop/youtube-fake-news-detector/node-server/venv/bin/python3";
+  const pythonPath = process.env.PYTHON_PATH || "python"; // 기본값을 python으로 설정
 
   console.log("Python 경로:", pythonPath);
   console.log("스크립트 경로:", pythonScript);

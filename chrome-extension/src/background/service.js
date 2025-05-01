@@ -1,3 +1,5 @@
+// background/service.js
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "REQUEST_STT") {
     fetch("http://localhost:3000/api/stt", {
@@ -9,6 +11,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       .then((data) => sendResponse(data))
       .catch((error) => sendResponse({ error }));
     return true; // 비동기 응답을 위해 필요
+  }
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "SEND_TEXT_DATA") {
+    fetch("http://localhost:3000/api/analysis/text", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request.data),
+    })
+      .then((r) => r.json())
+      .then((data) => sendResponse(data))
+      .catch((error) => sendResponse({ error }));
+
+    return true;
   }
 });
 

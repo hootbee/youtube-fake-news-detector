@@ -11,5 +11,12 @@ router.post("/stt", (req, res) => {
   analysisController.analyzeVideo(req, res);
 });
 
+router.post("/text", (req, res) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+
+  analysisController.receiveTextData(req, res);
+});
+
 module.exports = router;
-//AIzaSyAbnJw_DT1gNPU-IJD_clOcTHCSXjfd07s

@@ -1,4 +1,5 @@
 // content.js
+
 console.log("[Trust Checker] 콘텐츠 스크립트 로드됨");
 
 // 전역 분석 결과 객체
@@ -98,6 +99,16 @@ async function runAnalysis() {
   } finally {
     console.groupEnd();
   }
+
+  chrome.runtime.sendMessage(
+    {
+      action: "SEND_TEXT_DATA",
+      data: analysisResults,
+    },
+    (response) => {
+      console.log("백엔드 응답:", response);
+    }
+  );
 }
 // 자막 추출 로직
 async function getCaptions() {
