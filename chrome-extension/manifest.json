@@ -3,7 +3,7 @@
   "name": "YouTube Trust Checker",
   "version": "1.0",
   "description": "YouTube 영상 신뢰도 분석 도구",
-  "permissions": ["activeTab", "scripting", "storage", "audioCapture"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "host_permissions": [
     "https://*.youtube.com/*",
     "https://your-backend-domain.com/*"

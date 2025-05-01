@@ -1,4 +1,4 @@
-// controllers/analysis.js
+const config = require("../config/env");
 const YouTubeService = require("../services/youtube");
 const OpenAIService = require("../services/openai");
 const WhisperService = require("../services/whisper");
@@ -20,21 +20,28 @@ class AnalysisController {
         this.youtube.getVideoComments(videoId),
       ]);
 
-      // 오디오 처리
-      const audioUrl = await this.youtube.getAudioStreamUrl(videoId);
-      const transcript = await this.whisper.transcribeAudio(audioUrl);
+      // 오디오 파일 다운로드 (URL이 아니라 실제 파일 경로 반환)
+      const audioPath = await this.youtube.downloadAudioStreamFile(videoId);
+
+      // Whisper로 텍스트 추출 (오디오 파일 경로 전달)
+      const transcript = await this.whisper.transcribeAudio(audioPath);
 
       // AI 분석
       const summary = await this.openai.summarizeText(
         `${details.snippet.title}\n${transcript}`
       );
 
-      // 임시 응답
+      // 응답
       res.json({
         summary,
         comments: comments.slice(0, 5),
         status: "success",
       });
+
+      // 임시 파일 삭제(선택)
+      if (audioPath && require("fs").existsSync(audioPath)) {
+        require("fs").unlink(audioPath, () => {});
+      }
     } catch (error) {
       console.error(error);
       res.status(500).json({ error: error.message });

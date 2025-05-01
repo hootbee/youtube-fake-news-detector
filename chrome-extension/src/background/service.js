@@ -1,6 +1,14 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "ANALYZE_VIDEO") {
-    processVideoAnalysis(request.data);
+  if (request.action === "REQUEST_STT") {
+    fetch("http://localhost:3000/api/stt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId: request.videoId }),
+    })
+      .then((r) => r.json())
+      .then((data) => sendResponse(data))
+      .catch((error) => sendResponse({ error }));
+    return true; // 비동기 응답을 위해 필요
   }
 });
 

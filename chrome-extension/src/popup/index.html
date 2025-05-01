@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YouTube Trust Checker</title>
+    <style>
+      body {
+        width: 300px;
+        padding: 15px;
+        font-family: Arial, sans-serif;
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 15px;
+      }
+      .trust-score {
+        font-size: 24px;
+        font-weight: bold;
+        color: #4caf50;
+      }
+      .trust-label {
+        margin: 10px 0;
+        padding: 8px;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .trust-label.real {
+        background-color: #dff0d8;
+        color: #3c763d;
+      }
+      .trust-label.fake {
+        background-color: #f2dede;
+        color: #a94442;
+      }
+      .articles-list {
+        margin-top: 15px;
+      }
+      .article-item {
+        margin: 5px 0;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>YouTube Trust Checker</h2>
+      <div class="trust-score">-</div>
+    </div>
+
+    <div class="trust-label">분석 중...</div>
+
+    <div class="articles-list">
+      <h4>관련 뉴스</h4>
+      <div id="articles-container"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
