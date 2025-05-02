@@ -77,20 +77,20 @@ async function runAnalysis() {
       console.log("📜 자막 없음");
     }
 
-    // 3. 댓글 추출
-    analysisResults.comments = await getComments();
-    if (analysisResults.comments.length) {
-      console.log("💬 댓글 (최근 3개):", analysisResults.comments.slice(0, 3));
-    } else {
-      console.log("💬 댓글 없음");
-    }
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      if (message.action === "REQUEST_STT") {
+        fetch("http://localhost:3000/api/analysis/stt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ videoId: message.videoId }),
+        })
+          .then((res) => res.json())
+          .then((data) => sendResponse(data))
+          .catch((err) => console.error(err));
 
-    chrome.runtime.sendMessage(
-      { action: "REQUEST_STT", videoId: analysisResults.videoId },
-      (response) => {
-        console.log("STT 결과:", response.transcript);
+        return true; // 비동기 응답을 위해 true 반환
       }
-    );
+    });
 
     // 4. 최종 결과
     console.log("✅ 분석 완료:", analysisResults);
@@ -127,70 +127,6 @@ async function getCaptions() {
     console.log("✅ DOM 자막 추출 성공");
     return domCaptions;
   }
-
-  // 2. API 기반 자막 (새 엔드포인트)
-  try {
-    const videoId = new URLSearchParams(location.search).get("v");
-    const apiUrl = `https://www.youtube.com/watch?v=${videoId}&hl=ko`;
-    const response = await fetch(apiUrl);
-    const html = await response.text();
-
-    // 자막 URL 파싱
-    const captionUrlMatch = html.match(/"captionTracks":(\[.*?\])/);
-    if (!captionUrlMatch) return null;
-
-    const captionTracks = JSON.parse(captionUrlMatch[1]);
-    const captionTrack =
-      captionTracks.find((track) => track.languageCode === "ko") ||
-      captionTracks[0];
-    const captionUrl = captionTrack?.baseUrl;
-
-    if (captionUrl) {
-      const captionResponse = await fetch(captionUrl);
-      return await captionResponse.text();
-    }
-  } catch (error) {
-    console.error("⚠️ API 자막 오류:", error);
-  }
-  return null;
-}
-async function getAudioTranscript(videoId) {
-  try {
-    const response = await fetch("http://your-backend.com/api/stt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ videoId }),
-    });
-
-    const { transcript } = await response.json();
-    return transcript;
-  } catch (error) {
-    console.error("STT 요청 실패:", error);
-    return null;
-  }
-}
-
-// 댓글 추출 로직
-async function getComments(limit = 20) {
-  // 댓글 영역 강제 로딩
-  window.scrollTo(0, document.body.scrollHeight);
-  await new Promise((r) => setTimeout(r, 3000));
-
-  // 댓글 컨테이너 확인
-  const commentSection = await waitForElement("ytd-comments");
-  if (!commentSection) return [];
-
-  // 실제 댓글 요소 선택
-  return Array.from(
-    commentSection.querySelectorAll(
-      "ytd-comment-thread-renderer, ytd-comment-renderer"
-    )
-  )
-    .slice(0, limit)
-    .map((comment) => ({
-      author: comment.querySelector("#author-text")?.textContent.trim(),
-      content: comment.querySelector("#content-text")?.textContent.trim(),
-    }));
 }
 
 // 초기 실행

@@ -40,9 +40,14 @@ const express = require("express");
 const { downloadAudio } = require("./lib/downloadAudio");
 const { transcribeAudioLocal } = require("./lib/whisperLocal");
 const fs = require("fs");
+const cors = require("cors");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
+
+const analysisRouter = require("./api/routes/analysis");
+app.use("/api/analysis", analysisRouter);
 
 app.post("/api/stt", async (req, res) => {
   const { videoId } = req.body;
