@@ -50,4 +50,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     // 비동기 응답 처리
     return true;
   }
+
+  if (message.action === "REQUEST_FULL_ANALYSIS") {
+    fetch("http://localhost:3000/api/analysis/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        videoId: message.videoId,
+        youtubeText: message.youtubeText,
+      }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("📊 전체 분석 결과:", data);
+        sendResponse(data);
+      })
+      .catch((error) => {
+        console.error(error);
+        sendResponse({ status: "error", error });
+      });
+    return true;
+  }
 });

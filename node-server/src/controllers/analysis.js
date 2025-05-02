@@ -87,6 +87,41 @@ class AnalysisController {
       res.status(500).json({ error: error.message });
     }
   }
+
+  async analyzeVideoFull(req, res) {
+    try {
+      const { videoId, youtubeText } = req.body;
+      if (!videoId || !youtubeText) {
+        return res.status(400).json({ error: "videoId와 youtubeText 필요" });
+      }
+
+      // 1️⃣ 오디오 다운로드
+      const audioPath = await this.whisper.downloadAudio(videoId);
+      console.log("오디오 다운로드 완료:", audioPath);
+
+      // 2️⃣ STT 변환
+      const whisperText = await this.whisper.transcribeAudio(audioPath);
+      console.log("STT 변환 완료");
+
+      // 3️⃣ 자막 보정 및 요약
+      const summary = await this.gemini.summarizeAndCorrect(
+        whisperText,
+        youtubeText
+      );
+      console.log("요약 완료");
+
+      // ✅ 최종 응답
+      res.json({
+        audioPath,
+        whisperText,
+        summary,
+        status: "success",
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: error.message });
+    }
+  }
 }
 
 module.exports = new AnalysisController();

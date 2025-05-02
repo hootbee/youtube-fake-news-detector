@@ -33,4 +33,10 @@ router.post("/summarize", (req, res) => {
   analysisController.summarizeCaptions(req, res);
 });
 
+router.post("/analyze", (req, res) => {
+  res.header("Access-Control-Allow-Methods", "POST");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  analysisController.analyzeVideoFull(req, res);
+});
+
 module.exports = router;
