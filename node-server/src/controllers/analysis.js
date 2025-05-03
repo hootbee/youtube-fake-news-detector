@@ -109,6 +109,7 @@ class AnalysisController {
         youtubeText
       );
       console.log("요약 완료");
+      console.log("\n📖 Gemini 요약 결과:\n", summary);
 
       // ✅ 최종 응답
       res.json({

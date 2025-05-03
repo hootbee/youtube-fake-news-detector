@@ -4,12 +4,6 @@ const express = require("express");
 const router = express.Router();
 const analysisController = require("../../controllers/analysis");
 
-router.post("/stt", (req, res) => {
-  res.header("Access-Control-Allow-Methods", "POST");
-  res.header("Access-Control-Allow-Headers", "Content-Type");
-  analysisController.analyzeVideo(req, res);
-});
-
 router.post("/text", (req, res) => {
   res.header("Access-Control-Allow-Methods", "POST");
   res.header("Access-Control-Allow-Headers", "Content-Type");

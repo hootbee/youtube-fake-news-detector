@@ -8,7 +8,6 @@ window.analysisResults = {
   videoId: null,
   channel: null,
   captions: null,
-  comments: [],
 };
 
 // 댓글, 자막 등 동적 로딩 대응을 위한 waitForElement 함수 추가
@@ -76,22 +75,6 @@ async function runAnalysis() {
     } else {
       console.log("📜 자막 없음");
     }
-
-    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      if (message.action === "REQUEST_STT") {
-        fetch("http://localhost:3000/api/analysis/stt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videoId: message.videoId }),
-        })
-          .then((res) => res.json())
-          .then((data) => sendResponse(data))
-          .catch((err) => console.error(err));
-
-        return true; // 비동기 응답을 위해 true 반환
-      }
-    });
-
     // 4. 최종 결과
     console.log("✅ 분석 완료:", analysisResults);
   } catch (error) {
@@ -103,6 +86,7 @@ async function runAnalysis() {
   chrome.runtime.sendMessage(
     {
       action: "SEND_TEXT_DATA",
+      videoId: analysisResults.videoId,
       data: analysisResults,
     },
     (response) => {
@@ -112,7 +96,7 @@ async function runAnalysis() {
 }
 // 자막 추출 로직
 async function getCaptions() {
-  // 1. DOM 기반 자막 (2024년 8월 기준)
+  // 1️⃣ DOM 자막 먼저 시도
   const domCaptions =
     Array.from(
       document.querySelectorAll(
@@ -127,6 +111,53 @@ async function getCaptions() {
     console.log("✅ DOM 자막 추출 성공");
     return domCaptions;
   }
+
+  // 2️⃣ YouTube API 자막 시도
+  const videoId = new URLSearchParams(location.search).get("v");
+  const apiCaptions = await getApiCaptions(videoId);
+
+  if (apiCaptions) {
+    console.log("✅ API 자막 추출 성공");
+    return apiCaptions;
+  }
+
+  // 둘 다 없으면 null 반환
+  console.log("❌ 자막 없음");
+  return null;
+}
+
+// 📌 YouTube API 자막 추출 함수
+// 📌 YouTube API 자막 추출 함수
+async function getApiCaptions(videoId) {
+  try {
+    const apiUrl = `https://www.youtube.com/watch?v=${videoId}&hl=ko`;
+    const response = await fetch(apiUrl);
+    const html = await response.text();
+
+    // 자막 URL 파싱
+    const captionUrlMatch = html.match(/"captionTracks":(\[.*?\])/);
+    if (!captionUrlMatch) return null;
+
+    const captionTracks = JSON.parse(captionUrlMatch[1]);
+    const captionTrack =
+      captionTracks.find((track) => track.languageCode === "ko") ||
+      captionTracks[0];
+
+    const captionUrl = captionTrack?.baseUrl;
+    if (captionUrl) {
+      const captionResponse = await fetch(captionUrl);
+      let captions = await captionResponse.text();
+
+      // 🔥 <...> 태그 제거
+      captions = captions.replace(/<[^>]*>/g, "");
+
+      return captions;
+    }
+  } catch (error) {
+    console.error("⚠️ API 자막 오류:", error);
+  }
+
+  return null;
 }
 
 // 초기 실행
