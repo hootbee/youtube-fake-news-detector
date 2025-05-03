@@ -58,3 +58,15 @@ bash
 cd node-server
 npm start
 ```
+
+node-server에서 venv가상환경, npm, whisper, yt-dlp, express, torch 등 여러 의존성 처리해야함... 챗지피티나 재미나이같은 ai사용해서 설치하길...
+환경변수는 node-server/.env로 관리 필요.
+
+/_
+// node-server/.env 예시형식
+NEWS_API_KEY=
+PYTHON_PATH=/Users/leejunhyeong/Desktop/youtube-fake-news-detector/node-server/venv/bin/python3
+YTDLP_PATH=/opt/homebrew/bin/yt-dlp
+PYTHON_PATH=/Users/leejunhyeong/Desktop/youtube-fake-news-detector/node-server/venv/bin/python3
+GEMINI_API_KEY=
+_/
