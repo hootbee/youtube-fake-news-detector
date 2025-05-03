@@ -60,6 +60,17 @@ class WhisperService {
           console.error(stderr);
           reject(err);
         } else {
+          console.log("텍스트 변환 완료:", stdout.trim());
+
+          // 오디오 파일 삭제
+          fs.unlink(audioPath, (unlinkErr) => {
+            if (unlinkErr) {
+              console.error("오디오 파일 삭제 실패:", unlinkErr);
+            } else {
+              console.log("오디오 파일 삭제 완료:", audioPath);
+            }
+          });
+
           resolve(stdout.trim());
         }
       });
