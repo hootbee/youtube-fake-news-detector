@@ -52,7 +52,7 @@ class WhisperService {
   async transcribeAudio(audioPath) {
     return new Promise((resolve, reject) => {
       const scriptPath = path.join(__dirname, "../python/transcribe.py");
-      const pythonPath = path.join(__dirname, "../../venv/bin/python");
+      const pythonPath = process.env.PYTHON_PATH;
       const command = `${pythonPath} "${scriptPath}" "${audioPath}"`;
 
       exec(command, (err, stdout, stderr) => {
