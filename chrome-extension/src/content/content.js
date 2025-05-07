@@ -39,13 +39,6 @@ const observer = new MutationObserver((mutations, obs) => {
   }
 });
 
-// 수동 테스트용 함수 (콘솔에서 직접 실행)
-window.testAnalysis = async () => {
-  console.group("[🔧] 수동 분석 시작");
-  await runAnalysis();
-  console.groupEnd();
-};
-
 // 주요 분석 로직
 async function runAnalysis() {
   try {
