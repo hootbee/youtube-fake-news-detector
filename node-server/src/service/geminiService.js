@@ -14,7 +14,7 @@ class GeminiService {
   async summarizeAndCorrect(whisperText, youtubeText) {
     try {
       const model = this.api.getGenerativeModel({
-        model: "gemini-1.5-pro-latest",
+        model: "gemini-1.5-flash-8b",
       });
 
       const prompt = `

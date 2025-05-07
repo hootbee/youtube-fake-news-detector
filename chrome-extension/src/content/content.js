@@ -93,7 +93,7 @@ async function runAnalysis() {
       console.log("백엔드 응답:", response);
     }
   );
-  
+
   // 이상은이 추가한 부분
   const dummySummary = `제목: ${analysisResults.title}
 채널: ${analysisResults.channel}
@@ -135,7 +135,6 @@ async function getCaptions() {
   return null;
 }
 
-// 📌 YouTube API 자막 추출 함수
 // 📌 YouTube API 자막 추출 함수
 async function getApiCaptions(videoId) {
   try {
