@@ -42,31 +42,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true;
   }
-
-  if (message.action === "REQUEST_FULL_ANALYSIS") {
-    fetch("http://localhost:3000/api/analysis/analyze", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        videoId: message.videoId,
-        youtubeText: message.youtubeText,
-      }),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          // HTTP status가 200~299가 아니면 에러로 처리
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((analyzeResult) => {
-        console.log("📊 전체 분석 결과:", analyzeResult);
-        sendResponse({ status: "success", analyzeResult });
-      })
-      .catch((error) => {
-        console.error("데이터 처리 실패:", error);
-        sendResponse({ status: "error", error: error.message });
-      });
-    return true;
-  }
 });
