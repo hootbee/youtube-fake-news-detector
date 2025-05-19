@@ -87,10 +87,14 @@ async function runAnalysis() {
     }
   );
 
-  // 이상은이 추가한 부분
-  const dummySummary = `제목: ${analysisResults.title}
-채널: ${analysisResults.channel}
-자막 전체: ${analysisResults.captions || "자막이 없습니다."}`;
+  // 이상은이 추가한 부분 (오버레이)
+  const dummySummary = `
+  <p><strong>📌 제목</strong></p>
+  <p>${analysisResults.title}</p>
+  <p><strong>📌 채널</strong></p>
+  <p>${analysisResults.channel}</p>
+  <p><strong>📌 전체 자막</strong></p>
+  <p>${analysisResults.captions}</p>` || `${"자막이 없습니다."}`;
 
   showOverlay(dummySummary);
   // 추가 부분 끝
