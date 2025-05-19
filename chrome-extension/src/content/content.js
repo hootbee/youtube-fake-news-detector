@@ -87,7 +87,33 @@ async function runAnalysis() {
     }
   );
 
-  // 이상은이 추가한 부분 (오버레이)
+  //오버레이 분할
+  //알고리즘 완성하면 {analysisResults.trustScore} 형식으로 변수 변경 필요
+  const overlay1 = showOverlay(
+    "trust-overlay",
+    "✨ 신뢰도",
+    "📌 신뢰도 점수",
+    `<p>${analysisResults.title}</p>`,
+    "80px",
+  );
+
+  const overlay2 = showOverlay(
+    "article-overlay",
+    "✨ 관련 기사",
+    "📌 기사 링크",
+    `<p>${analysisResults.channel}</p>`,
+    "220px",
+  );
+
+  const overlay3 = showOverlay(
+    "keyword-overlay",
+    "✨ 키워드",
+    "📌 연관 키워드",
+    `<p>${analysisResults.captions}</p>`,
+    "360px",
+  );
+}
+  /* 이상은이 추가한 부분 (오버레이)
   const dummySummary = `
   <p><strong>📌 제목</strong></p>
   <p>${analysisResults.title}</p>
@@ -97,8 +123,8 @@ async function runAnalysis() {
   <p>${analysisResults.captions}</p>` || `${"자막이 없습니다."}`;
 
   showOverlay(dummySummary);
-  // 추가 부분 끝
 }
+  추가 부분 끝 */
 
 // 자막 추출 로직
 async function getCaptions() {
