@@ -2,6 +2,10 @@
 
 console.log("[Trust Checker] 콘텐츠 스크립트 로드됨");
 
+//버튼 실행을 위한 전역변수 선언
+let analysisTriggered = false;
+let lastVideoId = null;
+
 // 전역 분석 결과 객체
 window.analysisResults = {
   title: null,
@@ -9,6 +13,59 @@ window.analysisResults = {
   channel: null,
   captions: null,
 };
+
+function insertOverlayTriggerButton(onClickCallback) {
+  const existingBtn = document.getElementById("trust-checker-btn");
+  if (existingBtn) return;
+
+  // ✅ 신뢰도 확인 버튼
+  const btn = document.createElement("button");
+  btn.id = "trust-checker-btn";
+  btn.innerText = "신뢰도 확인 🔎";
+  Object.assign(btn.style, {
+    position: "fixed",
+    top: "20px",
+    right: "130px",
+    zIndex: "10000",
+    padding: "10px 15px",
+    backgroundColor: "#2f80ed",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    cursor: "pointer"
+  });
+  btn.addEventListener("click", onClickCallback);
+  document.body.appendChild(btn);
+
+  // ✅ 닫기 버튼
+  const closeBtn = document.createElement("button");
+  closeBtn.id = "trust-close-btn";
+  closeBtn.innerText = "닫기 ❌";
+  Object.assign(closeBtn.style, {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    zIndex: "10000",
+    padding: "10px 15px",
+    backgroundColor: "#eb5757",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "14px",
+    cursor: "pointer"
+  });
+  closeBtn.addEventListener("click", () => {
+    const ids = ["trust-overlay", "article-overlay", "keyword-overlay"];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.remove();
+    });
+  });
+  document.body.appendChild(closeBtn);
+}
+
+
 
 // 댓글, 자막 등 동적 로딩 대응을 위한 waitForElement 함수 추가
 async function waitForElement(selector, timeout = 5000) {
@@ -30,14 +87,24 @@ async function waitForElement(selector, timeout = 5000) {
   });
 }
 
-// 자동 분석 트리거
+// 주기적으로 URL 변경 감지
+setInterval(() => {
+  const currentVideoId = new URLSearchParams(location.search).get("v");
+  if (analysisTriggered && currentVideoId !== lastVideoId) {
+    console.log("[♻️] 새로운 영상 감지됨. 오버레이 갱신 실행");
+    lastVideoId = currentVideoId;
+    runAnalysis();
+  }
+}, 1000);
+
+/* 자동 분석 트리거
 const observer = new MutationObserver((mutations, obs) => {
   if (document.querySelector("#title h1")) {
     console.log("[🔍] 영상 요소 감지됨");
     obs.disconnect();
     runAnalysis();
   }
-});
+});*/
 
 // 주요 분석 로직
 async function runAnalysis() {
@@ -191,7 +258,7 @@ async function getApiCaptions(videoId) {
   return null;
 }
 
-// 초기 실행
+/* 초기 실행
 if (document.querySelector("#title h1")) {
   runAnalysis();
 } else {
@@ -199,4 +266,11 @@ if (document.querySelector("#title h1")) {
     childList: true,
     subtree: true,
   });
-}
+}*/
+
+// 초기 실행 시 버튼 삽입
+insertOverlayTriggerButton(() => {
+  console.log("[🟦] 신뢰도 확인 버튼 클릭됨");
+  analysisTriggered = true;
+  runAnalysis();
+});
