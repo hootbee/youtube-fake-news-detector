@@ -274,3 +274,26 @@ insertOverlayTriggerButton(() => {
   analysisTriggered = true;
   runAnalysis();
 });
+
+//ON/OFF 기능
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === "TOGGLE_BUTTONS") {
+    const display = message.show ? "block" : "none";
+
+    const btn = document.getElementById("trust-checker-btn");
+    const closeBtn = document.getElementById("trust-close-btn");
+
+    if (btn) btn.style.display = display;
+    if (closeBtn) closeBtn.style.display = display;
+
+    const overlayIds = ["trust-overlay", "article-overlay", "keyword-overlay"];
+    overlayIds.forEach(id => {
+      const overlay = document.getElementById(id);
+      if (overlay) overlay.style.display = display;
+    });
+
+    console.log(`⚙️ 버튼 및 오버레이 표시 상태: ${display}`);
+  }
+});
+
+
