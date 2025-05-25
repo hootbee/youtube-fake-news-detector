@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlGoBoNi</title>
+    <link rel="stylesheet" href="../CSS/main.css" />
+    <script src="../JS/main.js"></script>
+    <script src="https://kit.fontawesome.com/9146488e89.js" crossorigin="anonymous"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,800;1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container"></div>
+    <div class="navbar">
+        <a class="logo" href="../HTML/main.html">
+            <img src="../SOURCE/logo.png" alt="logo">
+            <h1>&nbsp;&nbsp;AlGoBoNi</h1>
+        </a>
+        <div class="navbar1">
+            <ul>
+                <li><a href="#" onclick="scrollToSection(event, 'home')"><i class="fa-solid fa-house"></i>&nbsp;&nbsp;HOME</a></li>
+                <li><a href="#" onclick="scrollToSection(event, 'features')"><i class="fa-solid fa-wand-magic-sparkles"></i>&nbsp;&nbsp;FEATURES</a></li>
+                <li><a href="#" onclick="scrollToSection(event, 'install')"><i class="fa-solid fa-download"></i>&nbsp;&nbsp;INSTALL</a></li>
+                <li><a href="#" onclick="scrollToSection(event, 'contact')"><i class="fa-solid fa-phone"></i>&nbsp;&nbsp;CONTACT</a></li>
+            </ul>
+        </div>
+    </div>
+    <div id="home" class="home">
+        <img src="../SOURCE/main.png" alt="main">
+        <div class="home-text">
+            <h2>
+                Are you curious<br>
+                if the <span class="highlight">YouTube video</span> is true?<br>
+                Do you want to know<br>
+                if it's <span class="highlight">reliable information</span>?</h2>
+            </h2>
+            <h1>TRY <span>AlGoBoNi!</span></h1>
+        </div>
+    </div>
+    <div id="features" class="features">
+        <div class="f-container">
+            <button class="f-button prev"><i class="fa-solid fa-chevron-left"></i></button>
+            <div class="f-slide">
+                <div class="f-item"><img class="f-img" src="../SOURCE/feature1.png" alt="slide 1"></div>
+                <div class="f-item"><img class="f-img" src="../SOURCE/feature1.png" alt="slide 2"></div>
+                <div class="f-item"><img class="f-img" src="../SOURCE/feature1.png" alt="slide 3"></div>
+                <div class="f-item"><img class="f-img" src="../SOURCE/feature1.png" alt="slide 4"></div>
+            </div>
+            <button class="f-button next"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+        <div class="f-dot">
+            <span class="dot active"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+        </div>
+        <div class="f-text">
+            <i class="fa-solid fa-lightbulb"></i>
+            <h2><span class="highlight">TRUST SCORE</span></h2>
+            <p>Provide reliability scores based on official articles !</p>
+            <i class="fa-solid fa-newspaper"></i>
+            <h2><span class="highlight">ARTICLE</span></h2>
+            <p>Provide links to related articles !</p>
+            <i class="fa-solid fa-key"></i>
+            <h2><span class="highlight">KEYWORD</span></h2>
+            <p>Provide video keywords !</p>
+        </div>
+    </div>
+    <div id="install" class="install">
+        <p> 👇 <span class="highlight">CLICK</span> BUTTON !</p>
+        <button class="download"><a href="#"><i class="fa-solid fa-arrow-down"></i>&nbsp;&nbsp;INSTALL</a></button>
+    </div>
+    <div id="contact" class="contact">
+        <p class="team">TEAM <span class="highlight">AlGoBoNi</span></p>
+        <p class="department">JBNU Software Engineering</p>
+        <div class="member">
+            <p class="name">Lee Junhyeong</p>
+            <p class="email">xx3xx27@naver.com</p>
+        </div>
+        <div class="member">
+            <p class="name">Kim Hyunji</p>
+            <p class="email">hjk3859@naver.com</p>
+        </div>
+        <div class="member">
+            <p class="name">Lee Sangeun</p>
+            <p class="email">lse808131@gmail.com</p>
+        </div>
+        <div class="member">
+            <p class="name">Hwang Haegyu</p>
+            <p class="email">hkyu0313@naver.com</p>
+        </div>
+    </div>
+    <a href="#" id="back-to-top" title="맨 위로"><i class="fa-solid fa-chevron-up"></i></a>
+</body>
+
+<script>
+function scrollToSection(event, id) {
+    event.preventDefault();
+
+    const navbarHeight = document.querySelector('.navbar').offsetHeight;
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    const offsetPosition = target.offsetTop - navbarHeight;
+
+    window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+    });
+}
+
+const backToTopBtn = document.getElementById("back-to-top");
+
+window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+        backToTopBtn.style.display = "block";
+    } else {
+    backToTopBtn.style.display = "none";
+    }
+});
+
+backToTopBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+});
+</script>
+
+</html>
+
