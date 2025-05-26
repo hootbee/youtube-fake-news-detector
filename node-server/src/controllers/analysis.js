@@ -42,7 +42,7 @@ class AnalysisController {
 
       // 3️⃣ 자막 보정 및 요약
       const summaryCorrection = await this.gemini.summarizeVideo(whisperText, youtubeText); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
-      console.log("\n📖 Gemini 요약 결과:\n");
+      console.log("\n📖 [Gemini 요약 결과]");
 
       // 4️⃣ 포맷팅된 콘솔 출력
       console.log("📽️ 통합 자막:");
@@ -67,7 +67,12 @@ class AnalysisController {
       for (const result of summarizedArticles) {
         console.log(`\n📰 ${result.press} - ${result.title}`);
         console.log(`🔗 ${result.link}`);
-        console.log(`📄 요약: ${result.summary}`);
+        console.log("📄 요약:");
+        const formattedArtSum = result.summary
+          .split(/\n+/)
+          .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
+          .join("\n");
+        console.log(formattedArtSum);
       }
       // ✅ 추후 의미 유사도 계산용 저장
       const articleSummarySaving = summarizedArticles.map(a => a.summary);

@@ -46,8 +46,14 @@ ${youtubeText}
 
 2. 요약 전체를 관통하는 단 하나의 핵심 키워드를 생성해줘.
    - 이 키워드는 관련된 뉴스를 검색할 때 정확도를 높일 수 있도록 적절한 단어로 구성되어야 해.
-   - 예: 'SKT 개인정보유출', '이재명 기소', '우크라이나 전쟁', '삼성전자 감산' 등
    - 키워드는 한 줄로 출력하고, 여러 키워드로 나누지 마. 이 외에 키워드는 따로 추출하지 않아도 돼.
+   - 키워드를 생성할 때는 다음과 같은 규칙을 참고하도록 해
+     (1) 중심 사건의 핵심 인물 이름이 있다면 포함할 것
+          - 예: '이재명 기소', '윤석열 재판', '차철남 신상공재 결정' 등
+     (2) 중심 지역이 확인된다면 키워드에 포함할 것
+          - 예: '강남 폭발사고', '우크라이나 전쟁', '중부 내륙 3일 동안 비' 등
+     (3) 해당 영상에서 가장 중요한 사건을 포함할 것
+          - 예: 'SKT 개인정보유출', '삼성전자 감산', 'SK 조직적 해킹팀 구성'
 
 출력은 다음 형식으로 해줘:
 
@@ -87,17 +93,37 @@ ${youtubeText}
 
   async summarizeArticle(articleText) {
     const prompt = `
-다음 뉴스 기사를 3~5문장으로 요약해줘.
+다음은 요약하고자 하는 뉴스 기사 원문이야.
 
 [기사 내용]
 ${articleText}
 
-[요약 방식]
-- 핵심 내용만 간단명료하게 정리
-- 불필요한 세부사항 제거
-- 객관적인 톤 유지
+뉴스 기사 전체를 아래 기준을 따라서 요약해줘:
+
+1. 영상 요약 결과와 비교하기 좋도록, 핵심 내용과 주장 위주로 3~5문장으로 간결하게 요약.
+
+2. 요약은 날짜, 인물, 기관, 수치 등 객관적 사실 중심으로 구성.
+
+3. 기자의 해석, 감정적 표현, 배경 설명은 제외하고 중립적인 문장만 사용.
+
+출력은 다음 형식을 해줘:
+
+[요약]
+1. ...
+2. ...
+...
 `;
-    const textSummary = await this.generateContentFromPrompt(prompt);
+
+    const text = await this.generateContentFromPrompt(prompt);
+
+    const extractSection = (sectionName) => {
+      const regex = new RegExp(`\\[${sectionName}\\]\\n([\\s\\S]*?)(\\n\\[|$)`);
+      const match = text.match(regex);
+      return match ? match[1].trim() : "";
+    };
+
+    const textSummary = extractSection("요약");
+
     return textSummary.trim();
   }
 }
