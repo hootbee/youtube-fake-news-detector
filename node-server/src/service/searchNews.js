@@ -3,6 +3,7 @@ const cheerio = require('cheerio');
 const GeminiService = require('./geminiService');
 const gemini = new GeminiService();
 
+const allowedDomains = ["n.news.naver.com"]
 // 기사 본문 추출 함수
 async function extractArticleBody(url) {
     try {
@@ -23,14 +24,15 @@ async function extractArticleBody(url) {
 }
 
 // 네이버 뉴스 검색 및 기사 정보 추출 함수
-async function searchNews(query) {
+async function searchNews(query, display = 20) {
   const response = await axios.get('https://openapi.naver.com/v1/search/news', {
     headers: {
       'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID,
       'X-Naver-Client-Secret': process.env.NAVER_CLIENT_SECRET
     },
     params: {
-      query
+      query,
+      display
     }
   });
 
@@ -41,8 +43,15 @@ async function searchNews(query) {
 
   for (const article of response.data.items) {
     const link = article.link || article.originallink;
-    const press = article.press || new URL(link).hostname.replace('www.', '');
+    const domain = new URL(link).hostname.replace('www.', '');
+    const press = article.press || domain;
     const title = article.title.replace(/<[^>]+>/g, '');
+
+    const isAllowed = allowedDomains.some(allowed => domain.includes(allowed));
+    if (!isAllowed) {
+      console.log(`  ⚠️ ${title}: 도메인 '${domain}' 허용되지 않아 제외됨`);
+      continue;
+    }
 
     try {
       const articleBody = await extractArticleBody(link);
