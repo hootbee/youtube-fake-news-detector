@@ -1,5 +1,6 @@
 const GeminiService = require("../service/geminiService");
 const WhisperService = require("../service/whisperService");
+const searchNews = require('../service/searchNews');
 require("dotenv").config();
 
 class AnalysisController {
@@ -40,7 +41,7 @@ class AnalysisController {
       console.log("\n📝 STT 변환 완료");
 
       // 3️⃣ 자막 보정 및 요약
-      const summaryCorrection = await this.gemini.summarizeAndCorrect(whisperText, youtubeText); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
+      const summaryCorrection = await this.gemini.summarizeVideo(whisperText, youtubeText); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
       console.log("\n📖 Gemini 요약 결과:\n");
 
       // 4️⃣ 포맷팅된 콘솔 출력
@@ -48,17 +49,28 @@ class AnalysisController {
       console.log(summaryCorrection.mergedSubtitle);
 
       console.log("\n🧠 핵심 요약:");
-      const formattedSummary = summaryCorrection.summary
+      const formattedSummary = summaryCorrection.sttSummary
         .split(/\n+/)
         .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
         .join("\n");
       console.log(formattedSummary);
 
       console.log("\n🗝️ 핵심 키워드:");
-      console.log(summaryCorrection.keywords.map(k => `- ${k.replace(/^[-\s]+/, "")}`).join("\n") + "\n");
+      console.log(summaryCorrection.coreKeyword);
 
-      console.log("\n⚠️ 사실검증 키워드:");
-      console.log(summaryCorrection.factCheckKeywords.map(k => `- ${k.replace(/^[-\s]+/, "")}`).join("\n"));
+      // 5️⃣ 키워드로 기사 검색 및 요약
+      const searchKeyword = summaryCorrection.coreKeyword
+
+      console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 중...`);
+      const summarizedArticles = await searchNews(searchKeyword);
+
+      for (const result of summarizedArticles) {
+        console.log(`\n📰 ${result.press} - ${result.title}`);
+        console.log(`🔗 ${result.link}`);
+        console.log(`📄 요약: ${result.summary}`);
+      }
+      // ✅ 추후 의미 유사도 계산용 저장
+      const articleSummarySaving = summarizedArticles.map(a => a.summary);
 
       // ✅ 최종 응답
       res.json({
