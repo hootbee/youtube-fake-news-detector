@@ -16,7 +16,7 @@ body {
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   height: 285px;
   width: 285px;
-  padding: 13px 18px;
+  padding: 13px 18px; 
   text-align: center;
   box-sizing: border-box;
 }
