@@ -1,6 +1,7 @@
 const GeminiService = require("../service/geminiService");
 const WhisperService = require("../service/whisperService");
 const searchNews = require('../service/searchNews');
+const getSimilarity = require('../utils/embeddingClient');
 require("dotenv").config();
 
 class AnalysisController {
@@ -26,6 +27,13 @@ class AnalysisController {
     }
   }
   async analyzeVideoFull(req, res) {
+    function flattenSummary(summaryText) {
+      return summaryText
+        .split(/\n+/)
+        .map(line => line.replace(/^\d+\.\s*/, "").trim()) // 번호 제거
+        .join(" ");
+    }
+
     try {
       const { videoId, youtubeText } = req.body;
       if (!videoId || !youtubeText) {
@@ -49,14 +57,12 @@ class AnalysisController {
       console.log(summaryCorrection.mergedSubtitle);
 
       console.log("\n🧠 핵심 요약:");
-      const formattedSummary = summaryCorrection.sttSummary
+      const formattedSttSummary = summaryCorrection.sttSummary
         .split(/\n+/)
         .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
         .join("\n");
-      console.log(formattedSummary);
-
-      console.log("\n🗝️ 핵심 키워드:");
-      console.log(summaryCorrection.coreKeyword);
+      console.log(formattedSttSummary);
+      console.log("\n🗝️ 핵심 키워드: ", summaryCorrection.coreKeyword);
 
       // 5️⃣ 키워드로 기사 검색 및 요약
       const searchKeyword = summaryCorrection.coreKeyword
@@ -66,22 +72,62 @@ class AnalysisController {
 
       for (const result of summarizedArticles) {
         console.log(`\n📰 ${result.press} - ${result.title}`);
+        console.log(`📅 발행일: ${result.formattedDate}`);
         console.log(`🔗 ${result.link}`);
         console.log("📄 요약:");
-        const formattedArtSum = result.summary
+        const formattedArtSummary = result.summary
           .split(/\n+/)
           .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
           .join("\n");
-        console.log(formattedArtSum);
+        console.log(formattedArtSummary);
       }
-      // ✅ 추후 의미 유사도 계산용 저장
-      const articleSummarySaving = summarizedArticles.map(a => a.summary);
+
+      //6️⃣ 코사인 유사도 계산, 신뢰도 등급 산정, 결과 출력
+      const similarityResults = [];
+      for (const article of summarizedArticles) {
+        try {
+          const fltVideoSummary = flattenSummary(summaryCorrection.sttSummary);
+          const fltArticleSummary = flattenSummary(article.summary);
+
+          const result = await getSimilarity(fltVideoSummary, fltArticleSummary);
+
+          similarityResults.push({
+            ...article,
+            similarity: result.similarity,
+          });
+        } catch (err) {
+          console.warn(`❌ 유사도 계산 실패: ${err.message}`);
+        }
+      }
+
+      const topN = 3;
+      const topArticles = similarityResults
+        .sort((a, b) => b.similarity - a.similarity)
+        .slice(0, topN);
+
+      const avgSim =
+        topArticles.reduce((sum, art) => sum + art.similarity, 0) / topArticles.length;
+
+      let trustLevel = "";
+      if (avgSim >= 0.85) {
+        trustLevel = "✅ 신뢰";
+      } else if (avgSim >= 0.65) {
+        trustLevel = "⚠️ 불확실";
+      } else {
+        trustLevel = "❌ 불신";
+      }
+
+      console.log(`\n📊 평균 유사도 (Top ${topN}): ${avgSim.toFixed(2)}%`);
+      console.log(`🧾 신뢰도 판단 결과: ${trustLevel}`);
 
       // ✅ 최종 응답
       res.json({
         audioPath,
         whisperText,
         summaryCorrection,
+        topArticles,
+        averageSimilarity: avgSim,
+        trustLevel,
         status: "success",
       });
     } catch (error) {

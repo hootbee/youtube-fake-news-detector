@@ -47,6 +47,9 @@ async function searchNews(query, display = 20) {
     const press = article.press || domain;
     const title = article.title.replace(/<[^>]+>/g, '');
 
+    const rawDate = new Date(article.pubDate);
+    const formattedDate = `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
+
     const isAllowed = allowedDomains.some(allowed => domain.includes(allowed));
     if (!isAllowed) {
       console.log(`  ⚠️ ${title}: 도메인 '${domain}' 허용되지 않아 제외됨`);
@@ -66,6 +69,7 @@ async function searchNews(query, display = 20) {
         press,
         title,
         link,
+        formattedDate,
         summary: articleSummary
       });
     } catch (error) {
