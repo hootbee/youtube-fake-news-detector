@@ -56,48 +56,43 @@ class AnalysisController {
       console.log("📽️ 통합 자막:");
       console.log(summaryCorrection.mergedSubtitle);
 
-      console.log("\n🧠 핵심 요약:");
-      const formattedSttSummary = summaryCorrection.sttSummary
+      console.log("\n🧠 핵심 요약:\n", summaryCorrection.sttSummary
         .split(/\n+/)
-        .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
-        .join("\n");
-      console.log(formattedSttSummary);
-      console.log("\n🗝️ 핵심 키워드: ", summaryCorrection.coreKeyword);
+        .map(line => "  • " + line.replace(/^\d+\.\s*/, "").trim())
+        .join("\n"));
 
-      // 5️⃣ 키워드로 기사 검색 및 요약
-      const searchKeyword = summaryCorrection.coreKeyword
-
+      // 5️⃣ 키워드로 기사 검색, 기사 요약, 평문 처리, 임베딩, 코사인 유사도 계산, 결과 출력
+      const searchKeyword = summaryCorrection.coreKeyword;
+      console.log("\n🗝️ 핵심 키워드:", searchKeyword);
       console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 중...`);
       const summarizedArticles = await searchNews(searchKeyword);
 
-      for (const result of summarizedArticles) {
-        console.log(`\n📰 ${result.press} - ${result.title}`);
-        console.log(`📅 발행일: ${result.formattedDate}`);
-        console.log(`🔗 ${result.link}`);
-        console.log("📄 요약:");
-        const formattedArtSummary = result.summary
-          .split(/\n+/)
-          .map(line => line.replace(/^\d+\.\s*/, "• ").trim())
-          .join("\n");
-        console.log(formattedArtSummary);
-      }
-
-      //6️⃣ 코사인 유사도 계산, 신뢰도 등급 산정, 결과 출력
       const similarityResults = [];
+      const fltVideoSummary = flattenSummary(summaryCorrection.sttSummary);
+
       for (const article of summarizedArticles) {
         try {
-          const fltVideoSummary = flattenSummary(summaryCorrection.sttSummary);
           const fltArticleSummary = flattenSummary(article.summary);
-
           const result = await getSimilarity(fltVideoSummary, fltArticleSummary);
-
           similarityResults.push({
             ...article,
             similarity: result.similarity,
           });
         } catch (err) {
           console.warn(`❌ 유사도 계산 실패: ${err.message}`);
+          console.warn(`❌ 제외된 기사: ${article.title}`);
         }
+      }
+
+      for (const article of similarityResults) {
+        console.log(`\n  📰 ${article.press} - ${article.title}`);
+        console.log(`  📅 발행일: ${article.formattedDate}`);
+        console.log(`  🔗 ${article.link}`);
+        console.log(`  📄 요약:\n${article.summary
+          .split(/\n+/)
+          .map(line => "    • " + line.replace(/^\d+\.\s*/, "").trim())
+          .join("\n")}`);
+        console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);
       }
 
       const topN = 3;
@@ -108,17 +103,20 @@ class AnalysisController {
       const avgSim =
         topArticles.reduce((sum, art) => sum + art.similarity, 0) / topArticles.length;
 
-      let trustLevel = "";
-      if (avgSim >= 0.85) {
-        trustLevel = "✅ 신뢰";
-      } else if (avgSim >= 0.65) {
-        trustLevel = "⚠️ 불확실";
-      } else {
-        trustLevel = "❌ 불신";
-      }
+      console.log(`\n📐 평균 유사도 (Top ${topN}): ${avgSim.toFixed(2)}%`);
+      console.log(`📌 평균 유사도 계산에 사용된 기사 목록:`);
 
-      console.log(`\n📊 평균 유사도 (Top ${topN}): ${avgSim.toFixed(2)}%`);
-      console.log(`🧾 신뢰도 판단 결과: ${trustLevel}`);
+      topArticles.forEach((article, idx) => {
+        console.log(`    ${idx + 1}. 📰 ${article.press} - ${article.title}`);
+        console.log(`       📊 유사도: ${article.similarity.toFixed(2)}%`);
+      });
+
+      let trustLevel = "";
+      if (avgSim >= 0.85) trustLevel = "✅ 신뢰";
+      else if (avgSim >= 0.65) trustLevel = "⚠️ 불확실";
+      else trustLevel = "❌ 불신";
+
+      console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
 
       // ✅ 최종 응답
       res.json({

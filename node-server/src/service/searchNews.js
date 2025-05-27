@@ -37,7 +37,7 @@ async function searchNews(query, display = 20) {
   });
 
   console.log(`\n🔄 네이버 API 응답 개수: ${response.data.items.length}`);
-  console.log("  📑 기사 본문 및 요약 처리 현황:");
+  console.log("\n📑 기사 본문 및 요약 처리 현황:");
 
   const newsArticles = [];
 
@@ -52,7 +52,7 @@ async function searchNews(query, display = 20) {
 
     const isAllowed = allowedDomains.some(allowed => domain.includes(allowed));
     if (!isAllowed) {
-      console.log(`  ⚠️ ${title}: 도메인 '${domain}' 허용되지 않아 제외됨`);
+      console.log(`  ⚠️ "${title}" >> 도메인 '${domain}' 허용되지 않아 제외됨`);
       continue;
     }
 
@@ -64,7 +64,6 @@ async function searchNews(query, display = 20) {
       }
 
       const articleSummary = await gemini.summarizeArticle(articleBody);
-      console.log(`  📰 ${press} - ${title}`);
       newsArticles.push({
         press,
         title,
