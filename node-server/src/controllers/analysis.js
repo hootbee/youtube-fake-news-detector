@@ -92,16 +92,14 @@ class AnalysisController {
           .split(/\n+/)
           .map(line => "    • " + line.replace(/^\d+\.\s*/, "").trim())
           .join("\n")}`);
-        console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);
-      }
+        console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);      }
 
       const topN = 3;
       const topArticles = similarityResults
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, topN);
 
-      const avgSim =
-        topArticles.reduce((sum, art) => sum + art.similarity, 0) / topArticles.length;
+      const avgSim = topArticles.reduce((sum, art) => sum + art.similarity, 0) / topArticles.length;
 
       console.log(`\n📐 평균 유사도 (Top ${topN}): ${avgSim.toFixed(2)}%`);
       console.log(`📌 평균 유사도 계산에 사용된 기사 목록:`);
@@ -112,8 +110,8 @@ class AnalysisController {
       });
 
       let trustLevel = "";
-      if (avgSim >= 0.85) trustLevel = "✅ 신뢰";
-      else if (avgSim >= 0.65) trustLevel = "⚠️ 불확실";
+      if (avgSim >= 85.0) trustLevel = "✅ 신뢰";
+      else if (avgSim >= 65.0) trustLevel = "⚠️ 불확실";
       else trustLevel = "❌ 불신";
 
       console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
