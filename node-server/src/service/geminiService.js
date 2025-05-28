@@ -14,7 +14,7 @@ class GeminiService {
   async generateContentFromPrompt(prompt, maxRetry = 3) {
       for (let attempt = 1; attempt <= maxRetry; attempt++) {
         try {
-          const model = this.api.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+          const model = this.api.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
           const result = await model.generateContent(prompt);
           const response = await result.response;
           return response.text();
@@ -29,7 +29,7 @@ class GeminiService {
   }
 
   extractSection(text, sectionName) {
-    const regex = new RegExp(`\[${sectionName}\]\n([\s\S]*?)(\n\[|$)`);
+    const regex = new RegExp(`\\[${sectionName}\\]\\n([\\s\\S]*?)(\\n\\[|$)`);
     const match = text.match(regex);
     return match ? match[1].trim() : "";
   }

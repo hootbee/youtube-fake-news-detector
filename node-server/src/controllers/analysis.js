@@ -34,7 +34,6 @@ class AnalysisController {
     }
   }
   async analyzeVideoFull(req, res) {
-
     try {
       const { videoId, youtubeText } = req.body;
       if (!videoId || !youtubeText) {
@@ -59,68 +58,85 @@ class AnalysisController {
 
       // [B] 키워드 기반 서치
       console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 후 필터링 중. . .`);
-      const summarizedArticles = await searchNews(searchKeyword);
+      const allArticles = await searchNews(searchKeyword, 20, 'sim');
+      const titlesOnly = allArticles.map((a, i) => `기사${i + 1}: ${a.title}`).join("\n");
+      // [C] gemini 기사 필터링
+      const relevancePrompt = `
+        영상의 핵심 키워드는 다음과 같아:
+        \"${searchKeyword}\" 
+        
+        아래는 관련 뉴스 검색 결과의 제목 리스트야:
+        ${titlesOnly}
+        
+        이 중 실제로 키워드와 관련있는 기사만 선별해서 기사 번호로 대답해 줘
+        
+        [대답 예시]
+        관련 기사: 기사1, 기사3, 기사4 ...
+      `;
+      const geminiReply = await this.gemini.generateContentFromPrompt(relevancePrompt);
 
-      // 5️⃣ 키워드로 기사 검색, 기사 요약, 평문 처리, 임베딩, 코사인 유사도 계산, 결과 출력
+      const matchedIndices = [...geminiReply.matchAll(/기사(\d+)/g)].map(m => parseInt(m[1], 10) - 1);
+      const matchedArticles = matchedIndices.map(i => allArticles[i]).filter(Boolean);
 
-      const similarityResults = [];
-      const fltVideoSummary = flattenSummary(summaryCorrection.sttSummary);
-
-      for (const article of summarizedArticles) {
-        try {
-          const fltArticleSummary = flattenSummary(article.summary);
-          const result = await getSimilarity(fltVideoSummary, fltArticleSummary);
-          similarityResults.push({
-            ...article,
-            similarity: result.similarity,
-          });
-        } catch (err) {
-          console.warn(`❌ 유사도 계산 실패: ${err.message}`);
-          console.warn(`❌ 제외된 기사: ${article.title}`);
+      // [D] 관련 기사 5개 이상 존재
+      if (matchedArticles.length >= 5) {
+        const fltVideoSummary = this.flattenSummary(summaryCorrection.sttSummary);
+        const similarityResults = [];
+        // [E] 유사도 비교 → STT 요약과 기사 요약 비교
+        for (const article of matchedArticles) {
+          try {
+            const fltArticleSummary = this.flattenSummary(article.summary);
+            const result = await getSimilarity(fltVideoSummary, fltArticleSummary);
+            similarityResults.push({...article, similarity: result.similarity});
+          } catch (err) {
+            console.warn(`❌ 유사도 계산 실패: ${err.message}`);
+            console.warn(`❌ 제외된 기사: ${article.title}`);
+          }
         }
+        // 필터링 된 기사 정보 표시
+        for (const article of similarityResults) {
+          console.log(`\n  📰 ${article.press} - ${article.title}`);
+          console.log(`  📅 발행일: ${article.formattedDate}`);
+          console.log(`  🔗 ${article.link}`);
+          console.log(`  📄 요약:\n${article.summary
+            .split(/\n+/)
+            .map(line => "    • " + line.replace(/^\d+\.\s*/, "").trim())
+            .join("\n")}`);
+          console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);
+        }
+
+      // [F1] 유사도 평균 → 신뢰도 판단
+        const topArticles = similarityResults.sort((a, b) => b.similarity - a.similarity).slice(0, 5);
+        const avgSim = topArticles.reduce((sum, a) => sum + a.similarity, 0) / topArticles.length;
+
+        console.log(`\n📐 평균 유사도 (Top5): ${avgSim.toFixed(2)}%`);
+        console.log(`📌 평균 유사도 계산에 사용된 기사 목록:`);
+        topArticles.forEach((article, idx) => {
+          console.log(`    ${idx + 1}. 📰 ${article.press} - ${article.title}`);
+          console.log(`       📊 유사도: ${article.similarity.toFixed(2)}%`);
+        });
+      // [G1] 평균 유사도 범위
+        let trustLevel = "";
+        if (avgSim >= 85.0) trustLevel = "✅ 신빙성 높음";
+        else if (avgSim >= 65.0) trustLevel = "⚠️ 불확실";
+        else trustLevel = "❌ 신빙성 낮음";
+        console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
+
+        return res.json({
+          audioPath,
+          whisperText,
+          summaryCorrection,
+          trustLevel,
+          averageSimilarity: avgSim,
+          topArticles,
+          status: "success" });
       }
 
-      for (const article of similarityResults) {
-        console.log(`\n  📰 ${article.press} - ${article.title}`);
-        console.log(`  📅 발행일: ${article.formattedDate}`);
-        console.log(`  🔗 ${article.link}`);
-        console.log(`  📄 요약:\n${article.summary
-          .split(/\n+/)
-          .map(line => "    • " + line.replace(/^\d+\.\s*/, "").trim())
-          .join("\n")}`);
-        console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);      }
-
-      const topN = 5;
-      const topArticles = similarityResults
-        .sort((a, b) => b.similarity - a.similarity)
-        .slice(0, topN);
-
-      const avgSim = topArticles.reduce((sum, art) => sum + art.similarity, 0) / topArticles.length;
-
-      console.log(`\n📐 평균 유사도 (Top ${topN}): ${avgSim.toFixed(2)}%`);
-      console.log(`📌 평균 유사도 계산에 사용된 기사 목록:`);
-
-      topArticles.forEach((article, idx) => {
-        console.log(`    ${idx + 1}. 📰 ${article.press} - ${article.title}`);
-        console.log(`       📊 유사도: ${article.similarity.toFixed(2)}%`);
-      });
-
-      let trustLevel = "";
-      if (avgSim >= 85.0) trustLevel = "✅ 신뢰";
-      else if (avgSim >= 65.0) trustLevel = "⚠️ 불확실";
-      else trustLevel = "❌ 불신";
-
-      console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
-
-      // ✅ 최종 응답
-      res.json({
-        audioPath,
-        whisperText,
-        summaryCorrection,
-        topArticles,
-        averageSimilarity: avgSim,
-        trustLevel,
-        status: "success",
+      // 관련 기사 5개 미만 → 반복 탐색으로 전환
+      return res.json({
+        trustLevel: "⏳ 관련 기사 부족 - 반복 탐색 필요",
+        matchedCount: matchedArticles.length,
+        status: "need_retry",
       });
     } catch (error) {
       console.error(error);
@@ -128,5 +144,6 @@ class AnalysisController {
     }
   }
 }
+
 
 module.exports = new AnalysisController();
