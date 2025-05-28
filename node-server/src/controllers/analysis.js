@@ -10,6 +10,13 @@ class AnalysisController {
     this.whisper = new WhisperService();
   }
 
+  flattenSummary(summaryText) {
+    return summaryText
+        .split(/\n+/)
+        .map(line => line.replace(/^\d+\.\s*/, "").trim()) // 번호 제거
+        .join(" ");
+  }
+
   async receiveTextData(req, res) {
     try {
       const { data } = req.body;
@@ -27,12 +34,6 @@ class AnalysisController {
     }
   }
   async analyzeVideoFull(req, res) {
-    function flattenSummary(summaryText) {
-      return summaryText
-        .split(/\n+/)
-        .map(line => line.replace(/^\d+\.\s*/, "").trim()) // 번호 제거
-        .join(" ");
-    }
 
     try {
       const { videoId, youtubeText } = req.body;
@@ -40,32 +41,27 @@ class AnalysisController {
         return res.status(400).json({ error: "videoId와 youtubeText 필요" });
       }
 
-      // 1️⃣ 오디오 다운로드
+      // [A] 오디오 다운로드, STT 변환, 자막 보정 및 요약, 키워드 추출
       const audioPath = await this.whisper.downloadAudio(videoId);
       console.log("\n🎧 오디오 다운로드 완료:", audioPath);
-
-      // 2️⃣ STT 변환
       const whisperText = await this.whisper.transcribeAudio(audioPath);
       console.log("\n📝 STT 변환 완료");
-
-      // 3️⃣ 자막 보정 및 요약
       const summaryCorrection = await this.gemini.summarizeVideo(whisperText, youtubeText); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
       console.log("\n📖 [Gemini 요약 결과]");
-
-      // 4️⃣ 포맷팅된 콘솔 출력
       console.log("📽️ 통합 자막:");
       console.log(summaryCorrection.mergedSubtitle);
-
       console.log("\n🧠 핵심 요약:\n", summaryCorrection.sttSummary
         .split(/\n+/)
         .map(line => "  • " + line.replace(/^\d+\.\s*/, "").trim())
         .join("\n"));
-
-      // 5️⃣ 키워드로 기사 검색, 기사 요약, 평문 처리, 임베딩, 코사인 유사도 계산, 결과 출력
       const searchKeyword = summaryCorrection.coreKeyword;
       console.log("\n🗝️ 핵심 키워드:", searchKeyword);
-      console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 중...`);
+
+      // [B] 키워드 기반 서치
+      console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 후 필터링 중. . .`);
       const summarizedArticles = await searchNews(searchKeyword);
+
+      // 5️⃣ 키워드로 기사 검색, 기사 요약, 평문 처리, 임베딩, 코사인 유사도 계산, 결과 출력
 
       const similarityResults = [];
       const fltVideoSummary = flattenSummary(summaryCorrection.sttSummary);
@@ -94,7 +90,7 @@ class AnalysisController {
           .join("\n")}`);
         console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);      }
 
-      const topN = 3;
+      const topN = 5;
       const topArticles = similarityResults
         .sort((a, b) => b.similarity - a.similarity)
         .slice(0, topN);

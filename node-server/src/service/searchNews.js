@@ -6,25 +6,19 @@ const gemini = new GeminiService();
 const allowedDomains = ["n.news.naver.com"]
 // 기사 본문 추출 함수
 async function extractArticleBody(url) {
-    try {
-        const response = await axios.get(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)...'
-            }
-        });
-        const $ = cheerio.load(response.data);
+  try {
+    const response = await axios.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' }
+    });
+    const $ = cheerio.load(response.data);
     const body = $('article').text().trim() || $('div#articleBodyContents').text().trim();
-    if (!body || body.length < 300) {
-      return null;
-    }
-    return body;
+    return body && body.length >= 300 ? body : null;
   } catch {
     return null;
   }
 }
-
 // 네이버 뉴스 검색 및 기사 정보 추출 함수
-async function searchNews(query, display = 20) {
+async function searchNews(query, display = 20, sort = 'sim') {
   const response = await axios.get('https://openapi.naver.com/v1/search/news', {
     headers: {
       'X-Naver-Client-Id': process.env.NAVER_CLIENT_ID,
@@ -32,7 +26,8 @@ async function searchNews(query, display = 20) {
     },
     params: {
       query,
-      display
+      display,
+      sort
     }
   });
 
@@ -46,15 +41,10 @@ async function searchNews(query, display = 20) {
     const domain = new URL(link).hostname.replace('www.', '');
     const press = article.press || domain;
     const title = article.title.replace(/<[^>]+>/g, '');
-
     const rawDate = new Date(article.pubDate);
     const formattedDate = `${rawDate.getFullYear()}-${String(rawDate.getMonth() + 1).padStart(2, '0')}-${String(rawDate.getDate()).padStart(2, '0')}`;
 
-    const isAllowed = allowedDomains.some(allowed => domain.includes(allowed));
-    if (!isAllowed) {
-      console.log(`  ⚠️ "${title}" >> 도메인 '${domain}' 허용되지 않아 제외됨`);
-      continue;
-    }
+    if (!allowedDomains.some(d => domain.includes(d))) continue;
 
     try {
       const articleBody = await extractArticleBody(link);
@@ -62,7 +52,6 @@ async function searchNews(query, display = 20) {
         console.warn(`  ❌ ${title}: 본문 추출 실패 (300자 미만)`);
         continue;
       }
-
       const articleSummary = await gemini.summarizeArticle(articleBody);
       newsArticles.push({
         press,
