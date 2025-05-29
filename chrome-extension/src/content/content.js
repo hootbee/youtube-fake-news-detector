@@ -34,7 +34,7 @@ function insertOverlayTriggerButton(onClickCallback) {
     border: "none",
     borderRadius: "6px",
     fontSize: "14px",
-    cursor: "pointer"
+    cursor: "pointer",
   });
   btn.addEventListener("click", onClickCallback);
   document.body.appendChild(btn);
@@ -54,19 +54,17 @@ function insertOverlayTriggerButton(onClickCallback) {
     border: "none",
     borderRadius: "6px",
     fontSize: "14px",
-    cursor: "pointer"
+    cursor: "pointer",
   });
   closeBtn.addEventListener("click", () => {
     const ids = ["trust-overlay", "article-overlay", "keyword-overlay"];
-    ids.forEach(id => {
+    ids.forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.remove();
     });
   });
   document.body.appendChild(closeBtn);
 }
-
-
 
 // 댓글, 자막 등 동적 로딩 대응을 위한 waitForElement 함수 추가
 async function waitForElement(selector, timeout = 5000) {
@@ -113,8 +111,8 @@ async function runAnalysis() {
     console.group("[🔎] 분석 진행 중");
 
     // 1. 기본 정보 추출
-      const currentVideoId = new URLSearchParams(location.search).get("v");
-      const currentTitle = document.querySelector("#title h1")?.innerText;
+    const currentVideoId = new URLSearchParams(location.search).get("v");
+    const currentTitle = document.querySelector("#title h1")?.innerText;
 
     // 영상 중복 분석 방지
     if (currentTitle === alreadyAnalyzedTitle) {
@@ -126,7 +124,6 @@ async function runAnalysis() {
     alreadyAnalyzedTitle = currentTitle;
     analysisResults.videoId = currentVideoId;
     analysisResults.title = currentTitle;
-
 
     // 채널 정보 (2024년 7월 기준)
     const channelElement =
@@ -174,7 +171,7 @@ async function runAnalysis() {
     "✨ 신뢰도",
     "📌 신뢰도 점수",
     `<p>${analysisResults.title}</p>`,
-    "80px",
+    "80px"
   );
 
   const overlay2 = showOverlay(
@@ -182,7 +179,7 @@ async function runAnalysis() {
     "✨ 관련 기사",
     "📌 기사 링크",
     `<p>${analysisResults.channel}</p>`,
-    "220px",
+    "220px"
   );
 
   const overlay3 = showOverlay(
@@ -190,21 +187,10 @@ async function runAnalysis() {
     "✨ 키워드",
     "📌 연관 키워드",
     `<p>${analysisResults.captions}</p>`,
-    "360px",
+    "360px"
   );
 }
-  /* 이상은이 추가한 부분 (오버레이)
-  const dummySummary = `
-  <p><strong>📌 제목</strong></p>
-  <p>${analysisResults.title}</p>
-  <p><strong>📌 채널</strong></p>
-  <p>${analysisResults.channel}</p>
-  <p><strong>📌 전체 자막</strong></p>
-  <p>${analysisResults.captions}</p>` || `${"자막이 없습니다."}`;
 
-  showOverlay(dummySummary);
-}
-  추가 부분 끝 */
 
 // 자막 추출 로직
 async function getCaptions() {
@@ -271,16 +257,6 @@ async function getApiCaptions(videoId) {
   return null;
 }
 
-/* 초기 실행
-if (document.querySelector("#title h1")) {
-  runAnalysis();
-} else {
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-}*/
-
 // 초기 실행 시 버튼 삽입
 insertOverlayTriggerButton(() => {
   console.log("[🟦] 신뢰도 확인 버튼 클릭됨");
@@ -300,7 +276,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (closeBtn) closeBtn.style.display = display;
 
     const overlayIds = ["trust-overlay", "article-overlay", "keyword-overlay"];
-    overlayIds.forEach(id => {
+    overlayIds.forEach((id) => {
       const overlay = document.getElementById(id);
       if (overlay) overlay.style.display = display;
     });
@@ -308,4 +284,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(`⚙️ 버튼 및 오버레이 표시 상태: ${display}`);
   }
 });
-

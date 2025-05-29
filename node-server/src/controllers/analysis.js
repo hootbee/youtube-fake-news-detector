@@ -43,7 +43,9 @@ class AnalysisController {
 
   async analyzeVideoFull(req, res) {
     try {
-      const { videoId, youtubeText } = req.body;
+      const { videoId, youtubeText,title } = req.body;
+        console.log(title);
+        console.log(videoId);
       if (!videoId || !youtubeText) {
         return res.status(400).json({ error: "videoId와 youtubeText 필요" });
       }
@@ -64,6 +66,7 @@ class AnalysisController {
     lastProcessed.title = youtubeText;
 
       // 1️⃣ 오디오 다운로드
+        console.log(title);
       const audioPath = await this.whisper.downloadAudio(videoId);
       console.log("\n🎧 오디오 다운로드 완료:", audioPath);
       const whisperText = await this.whisper.transcribeAudio(audioPath);

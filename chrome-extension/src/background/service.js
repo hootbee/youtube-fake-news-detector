@@ -26,7 +26,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
           body: JSON.stringify({
             // 필요하면 textDataResult에서 필요한 값 넘겨주기
             videoId: message.videoId,
-            youtubeText: message.data, // or textDataResult.something
+            youtubeText: message.data,
+            title:message.data.title,// or textDataResult.something
           }),
         });
       })
