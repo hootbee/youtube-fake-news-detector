@@ -15,12 +15,9 @@ window.analysisResults = {
   captions: null,
 };
 
-
-//
 function insertOverlayTriggerButton(onClickCallback) {
   const existingBtn = document.getElementById("trust-checker-btn");
   if (existingBtn) return;
-
 
   // ✅ 신뢰도 확인 버튼
   const btn = document.createElement("button");
@@ -202,6 +199,7 @@ async function runAnalysis() {
     }
   );
 }
+
 
 // 자막 추출 로직
 async function getCaptions() {
