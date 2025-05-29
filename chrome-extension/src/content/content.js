@@ -1,5 +1,5 @@
 // content.js
-
+//커밋
 console.log("[Trust Checker] 콘텐츠 스크립트 로드됨");
 
 //버튼 실행을 위한 전역변수 선언
