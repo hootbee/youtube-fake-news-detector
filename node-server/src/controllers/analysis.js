@@ -273,14 +273,19 @@ ${altArticles.map((a, i) => `기사${i + 1}: ${a.title}\n내용: ${a.summary}`).
         console.log("\n❌ 허위 가능성 높음: 신뢰할 수 없는 영상일 수 있습니다.");
         return res.json({
           trustLevel: "❌ 허위 가능성 높음",
-          rebuttal: rebuttalResult,
+          rebuttal: {
+            press: rebuttalResult.press, // 언론사명
+            title: rebuttalResult.title, // 기사 제목
+            link: rebuttalResult.link, // 기사 링크
+            rebuttalSentence: rebuttalResult.rebuttalSentence, // 반증 문장
+            searchKeyword: altKeyword  // 반증 기사 서치 키워드
+          },
           status: "rebuttal_success"
         });
       } else {
         console.warn("\n❓ 판단 보류: 3회 반복에도 반증기사나 문장을 찾지 못했습니다. 사용자가 직접 사건에 대해서 알아보는 것이 좋습니다.");
         return res.json({
           trustLevel: "⚠️ 판단 유보",
-          reason: "3회 반복에도 반증 기사나 문장을 찾지 못했습니다. 사용자가 직접 뉴스 기사를 확인해보는 것이 좋습니다.",
           status: "inconclusive"
         });
       }
