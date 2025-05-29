@@ -15,9 +15,12 @@ window.analysisResults = {
   captions: null,
 };
 
+
+//
 function insertOverlayTriggerButton(onClickCallback) {
   const existingBtn = document.getElementById("trust-checker-btn");
   if (existingBtn) return;
+
 
   // ✅ 신뢰도 확인 버튼
   const btn = document.createElement("button");
@@ -96,14 +99,6 @@ setInterval(() => {
   }
 }, 1000);
 
-/* 자동 분석 트리거
-const observer = new MutationObserver((mutations, obs) => {
-  if (document.querySelector("#title h1")) {
-    console.log("[🔍] 영상 요소 감지됨");
-    obs.disconnect();
-    runAnalysis();
-  }
-});*/
 
 // 주요 분석 로직
 async function runAnalysis() {
@@ -130,13 +125,9 @@ async function runAnalysis() {
       document.querySelector('a[href^="/@"]') ||
       document.querySelector('a[href^="/channel/"]') ||
       document.querySelector("#owner-container yt-formatted-string a");
-    analysisResults.channel = channelElement?.href;
+      analysisResults.channel = channelElement?.href;
 
-    console.log("📌 기본 정보:", {
-      제목: analysisResults.title,
-      영상ID: analysisResults.videoId,
-      채널: analysisResults.channel,
-    });
+     console.log("📌 기본 정보:", analysisResults);
 
     // 2. 자막 추출
     analysisResults.captions = await getCaptions();
@@ -159,38 +150,58 @@ async function runAnalysis() {
       videoId: analysisResults.videoId,
       data: analysisResults,
     },
-    (response) => {
+     async (response) => {
       console.log("백엔드 응답:", response);
+
+      const {
+        trustLevel,
+        averageSimilarity,
+        searchKeyword,
+        topArticles,
+      } = response?.analysisResult || {};
+
+      analysisResults.trustLevel = trustLevel;
+      analysisResults.averageSimilarity = averageSimilarity;
+      analysisResults.searchKeyword = searchKeyword;
+      analysisResults.topArticles = topArticles;
+
+      let trustLabel = "";
+      if (typeof averageSimilarity === "number") {
+        if (averageSimilarity >= 85) trustLabel = "🟢 신뢰";
+        else if (averageSimilarity >= 55) trustLabel = "🟡 불확실";
+        else trustLabel = "🔴 불신";
+      }
+
+      showOverlay(
+        "trust-overlay",
+        "✨ 신뢰도",
+        `📌 유사도 기반 신뢰도`,
+        `<p>${trustLabel} (${averageSimilarity?.toFixed(2) ?? "?"}%)</p>`,
+        "80px"
+      );
+
+        showOverlay(
+        "article-overlay",
+        "✨ 관련 기사",
+        "📌 신뢰도 TOP 5",
+        topArticles?.map(
+          (a, i) =>
+            `<p><strong>${i + 1}. ${a.press}</strong> - ${a.title}<br/>?? "?"
+            }%</p>`
+        ).join("") || "<p>관련 기사 없음</p>",
+        "220px"
+      );
+
+           showOverlay(
+        "keyword-overlay",
+        "✨ 키워드",
+        "📌 연관 키워드",
+        `<p>${searchKeyword || "키워드 없음"}</p>`,
+        "360px"
+      );
     }
   );
-
-  //오버레이 분할
-  //알고리즘 완성하면 {analysisResults.trustScore} 형식으로 변수 변경 필요
-  const overlay1 = showOverlay(
-    "trust-overlay",
-    "✨ 신뢰도",
-    "📌 신뢰도 점수",
-    `<p>${analysisResults.title}</p>`,
-    "80px"
-  );
-
-  const overlay2 = showOverlay(
-    "article-overlay",
-    "✨ 관련 기사",
-    "📌 기사 링크",
-    `<p>${analysisResults.channel}</p>`,
-    "220px"
-  );
-
-  const overlay3 = showOverlay(
-    "keyword-overlay",
-    "✨ 키워드",
-    "📌 연관 키워드",
-    `<p>${analysisResults.captions}</p>`,
-    "360px"
-  );
 }
-
 
 // 자막 추출 로직
 async function getCaptions() {
@@ -244,11 +255,7 @@ async function getApiCaptions(videoId) {
     if (captionUrl) {
       const captionResponse = await fetch(captionUrl);
       let captions = await captionResponse.text();
-
-      // 🔥 <...> 태그 제거
-      captions = captions.replace(/<[^>]*>/g, "");
-
-      return captions;
+      return captions.replace(/<[^>]*>/g, "");
     }
   } catch (error) {
     console.error("⚠️ API 자막 오류:", error);
@@ -275,8 +282,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (btn) btn.style.display = display;
     if (closeBtn) closeBtn.style.display = display;
 
-    const overlayIds = ["trust-overlay", "article-overlay", "keyword-overlay"];
-    overlayIds.forEach((id) => {
+
+    ["trust-overlay", "article-overlay", "keyword-overlay"].forEach(id => {
       const overlay = document.getElementById(id);
       if (overlay) overlay.style.display = display;
     });
