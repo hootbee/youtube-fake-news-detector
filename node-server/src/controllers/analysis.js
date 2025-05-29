@@ -48,23 +48,7 @@ class AnalysisController {
         return res.status(400).json({ error: "videoId와 youtubeText 필요" });
       }
 
-          // ✅ 중복 요청 방지
-    if (
-          videoId === lastProcessed.videoId &&
-          typeof youtubeText === "string" &&
-          typeof lastProcessed.title === "string" &&
-          youtubeText.trim() === lastProcessed.title.trim()
-    ) {
-      console.log("🚫 중복된 분석 요청 차단됨:", videoId);
-      return res.status(200).json({ message: "이미 분석된 영상입니다.", trustLevel: "SKIP" });
-    }
-
-    // ✅ 새로운 요청 등록
-    lastProcessed.videoId = videoId;
-    lastProcessed.title = youtubeText;
-
-
-      // ✅ 중복 요청 방지
+    // ✅ 중복 요청 방지
     if (
           videoId === lastProcessed.videoId &&
           typeof youtubeText === "string" &&
