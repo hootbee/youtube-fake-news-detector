@@ -43,9 +43,7 @@ class AnalysisController {
 
   async analyzeVideoFull(req, res) {
     try {
-      const { videoId, youtubeText,title } = req.body;
-        console.log(title);
-        console.log(videoId);
+      const { videoId, youtubeText, title } = req.body;
       if (!videoId || !youtubeText) {
         return res.status(400).json({ error: "videoId와 youtubeText 필요" });
       }
@@ -66,12 +64,11 @@ class AnalysisController {
     lastProcessed.title = youtubeText;
 
       // 1️⃣ 오디오 다운로드
-        console.log(title);
       const audioPath = await this.whisper.downloadAudio(videoId);
       console.log("\n🎧 오디오 다운로드 완료:", audioPath);
       const whisperText = await this.whisper.transcribeAudio(audioPath);
       console.log("\n📝 STT 변환 완료");
-      const videoSummary = await this.gemini.summarizeVideo(whisperText, youtubeText); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
+      const videoSummary = await this.gemini.summarizeVideo(whisperText, youtubeText, title); //geminiService쪽 변수명이랑 헷갈려서 변경함 -황해규
       console.log("\n📖 [Gemini 요약 결과]");
       console.log("📽️ 통합 자막:");
       console.log(videoSummary.mergedSubtitle);
@@ -89,7 +86,7 @@ class AnalysisController {
       // [C] gemini 기사 필터링
       const relevancePrompt = `
 영상의 제목은 다음과 같아:
-${videoSummary.title || "제목 없음"}
+${title || "제목 없음"}
       
 영상의 핵심 키워드는 다음과 같아:
 \"${searchKeyword}\" 
@@ -119,7 +116,18 @@ ${titlesOnly}
           try {
             const fltArticleSummary = this.flattenSummary(article.summary);
             const result = await getSimilarity(fltVideoSummary, fltArticleSummary);
-            similarityResults.push({...article, similarity: result.similarity});
+            const S = result.similarity / 100;
+            const C = article.credibility ?? 0.5;
+            const N = article.freshness ?? 0.5;
+            const trustScore = (0.6 * S) + (0.3 * C) + (0.1 * N);
+
+            similarityResults.push({
+              ...article,
+              similarity: result.similarity,
+              credibility: C,
+              freshness: N,
+              trustScore
+            });
           } catch (err) {
             console.warn(`❌ 유사도 계산 실패: ${err.message}`);
             console.warn(`❌ 제외된 기사: ${article.title}`);
@@ -134,39 +142,44 @@ ${titlesOnly}
             .split(/\n+/)
             .map(line => "    • " + line.replace(/^\d+\.\s*/, "").trim())
             .join("\n")}`);
-          console.log(`  📊 유사도: ${article.similarity.toFixed(2)}%`);
+          console.log(`  📊 유사도: ${(article.similarity).toFixed(2)} | 출처신뢰도: ${(article.credibility).toFixed(2)} | 신선도: ${(article.freshness).toFixed(2)}`);
+          console.log(`  ✅ 최종 신뢰도: ${(article.trustScore * 100).toFixed(2)}%`);
         }
 
       // [F1] 유사도 평균 → 신뢰도 판단
-        const topArticles = similarityResults.sort((a, b) => b.similarity - a.similarity).slice(0, 5);
-        const avgSim = topArticles.reduce((sum, a) => sum + a.similarity, 0) / topArticles.length;
+        const topArticles = similarityResults.sort((a, b) => b.trustScore - a.trustScore).slice(0, 5);
+        const avgTrust = topArticles.reduce((sum, a) => sum + a.trustScore, 0) / topArticles.length;
 
-        console.log(`\n📐 평균 유사도 (Top5): ${avgSim.toFixed(2)}%`);
-        console.log(`📌 평균 유사도 계산에 사용된 기사 목록:`);
+        console.log(`\n📐 평균 신뢰도 (Top5): ${(avgTrust * 100).toFixed(2)}%`);
+        console.log(`📌 평균 신뢰도 계산에 사용된 기사 목록:`);
         topArticles.forEach((article, idx) => {
           console.log(`    ${idx + 1}. 📰 ${article.press} - ${article.title}`);
-          console.log(`       📊 유사도: ${article.similarity.toFixed(2)}%`);
+          console.log(`       ✅ 신뢰도: ${(article.trustScore * 100).toFixed(2)}%`);
         });
-      // [G1] 평균 유사도 범위
+
         let trustLevel = "";
-        if (avgSim >= 85.0) trustLevel = "✅ 신빙성 높음";
-        else if (avgSim >= 65.0) trustLevel = "⚠️ 불확실";
+        if (avgTrust >= 0.80) trustLevel = "✅ 신빙성 높음";
+        else if (avgTrust >= 0.60) trustLevel = "⚠️ 불확실";
         else trustLevel = "❌ 신빙성 낮음";
 
         console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
 
         return res.json({
           trustLevel,
-          averageSimilarity: avgSim,
-          searchKeyword,  // 🔍 핵심 키워드 포함
+          averageTrustScore: avgTrust,
+          searchKeyword,
           topArticles: topArticles.map(article => ({
             press: article.press,
             title: article.title,
             link: article.link,
-            similarity: article.similarity
+            similarity: article.similarity,
+            credibility: article.credibility,
+            freshness: article.freshness,
+            trustScore: article.trustScore
           })),
           status: "success"
         });
+
       }
 
       // 🔁 반복적 반박 탐색 루프 시작
@@ -174,6 +187,7 @@ ${titlesOnly}
       let attempts = 0;
       let rebuttalFound = false;
       let rebuttalResult = null;
+      let altKeyword = "";
 
       while (attempts < maxAttempts && !rebuttalFound) {
         if (attempts === 0) console.log("📭 관련된 공식 뉴스 기사가 거의 존재하지 않습니다.");
@@ -181,7 +195,7 @@ ${titlesOnly}
 
         const retryingPrompt = `
 영상의 제목은 다음과 같아:
-${videoSummary.title || "제목 없음"}
+${title || "제목 없음"}
 
 이 영상은 다음과 같은 내용을 담고 있어:
 
@@ -219,7 +233,7 @@ ${searchKeyword}
 
         const rebuttalPrompt = `        
 영상의 제목은 다음과 같아:
-${videoSummary.title || "제목 없음"}
+${title || "제목 없음"}
 
 아래는 영상의 핵심 요약이야:
 
@@ -261,9 +275,9 @@ ${altArticles.map((a, i) => `기사${i + 1}: ${a.title}\n내용: ${a.summary}`).
             link: selected.link,
             rebuttalSentence: match[3].trim()
           };
-          console.log("\n✅ 반박 기사 서칭 성공:");
+          console.log("\n✅ 반증 기사 서칭 성공:");
           console.log(`  📰 ${rebuttalResult.title}`);
-          console.log(`  💬 반박 문장: ${rebuttalResult.rebuttalSentence}\n`);
+          console.log(`  💬 반증 문장: ${rebuttalResult.rebuttalSentence}\n`);
           rebuttalFound = true;
           break;
         } else console.warn("\n⚠️ 반박 기사 서칭 실패: 응답에서 형식을 찾지 못했습니다.");

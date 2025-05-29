@@ -3,29 +3,31 @@ require("dotenv").config();
 
 class GeminiService {
   constructor() {
-    if (!process.env.GEMINI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY_LITE) {
       throw new Error(
         "Gemini API 키가 설정되지 않았습니다. .env 파일을 확인해주세요."
       );
     }
-    this.api = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    this.api = new GoogleGenerativeAI(process.env.GEMINI_API_KEY_LITE);
   }
 
   async generateContentFromPrompt(prompt, maxRetry = 3) {
       for (let attempt = 1; attempt <= maxRetry; attempt++) {
         try {
-          const model = this.api.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+          const model = this.api.getGenerativeModel({ model: "gemini-2.0-flash-lite" }); // "gemini-2.0-flash-lite"는 유효한 모델이 아닐 수 있어 1.5-flash 사용
           const result = await model.generateContent(prompt);
           const response = await result.response;
           return response.text();
         } catch (error) {
           console.warn(`⚠️ Gemini API 호출 실패 (${attempt}/${maxRetry}): ${error.message}`);
-          if (attempt === maxRetry) {
+          if (attempt === maxRetry || error.message.includes("API key not valid")) { // 인증 오류 시 재시도 중단
             throw new Error(`Gemini API 호출 중 오류 발생: ${error.message}`);
           }
           await new Promise(res => setTimeout(res, 1000 * attempt)); // 지수 백오프
         }
       }
+      // maxRetry가 항상 오류를 발생시키면 도달해서는 안 됩니다.
+      throw new Error(`Gemini API 호출 ${maxRetry}회 시도 후 실패`);
   }
 
   extractSection(text, sectionName) {
@@ -34,17 +36,28 @@ class GeminiService {
     return match ? match[1].trim() : "";
   }
 
-  async summarizeVideo(whisperText, youtubeText, videoDurationMinutes = 5) {
+  async summarizeVideo(whisperText, youtubeText, videoTitle, videoDurationMinutes = 5) {
+     // videoTitle과 youtubeText가 초기에 null/undefined이더라도 문자열인지 확인
+     const effectiveVideoTitle = videoTitle || "제목 없음";
+     const effectiveYoutubeText = youtubeText || "제공된 YouTube 자막 없음";
+     const effectiveWhisperText = whisperText || "제공된 음성 인식 자막 없음";
+
+
      const prompt = `
-다음은 Whisper로부터 추출한 자막과 YouTube 자막이야.
+     
+다음은 Whisper로부터 추출한 자막과 YouTube 자막, 그리고 영상 제목이야:
+
+[영상 제목]
+${effectiveVideoTitle}
 
 [Whisper 자막]
-${whisperText}
+${effectiveWhisperText}
 
 [YouTube 자막]
-${youtubeText}
+${effectiveYoutubeText}
 
 두 자막을 비교해서 단어, 문장 구조 등 부자연스러운 부분은 수정하고 가장 자연스럽게 통합해줘.
+만약 한 쪽 자막만 제공되었다면, 제공된 자막을 기반으로 작업을 수행해줘.
 그 다음, 통합 자막을 바탕으로 다음 요청을 수행해줘:
 
 1. 영상의 길이가 약 ${videoDurationMinutes}분이므로,
@@ -54,7 +67,7 @@ ${youtubeText}
   - 이 키워드는 관련된 뉴스를 검색할 때 정확도를 높일 수 있도록 적절한 단어로 구성되어야 해.
   - 키워드는 2어절 혹은 3어절로 작성하고, 여러 키워드로 나누지 마. 이 외에 키워드는 따로 추출하지 않아도 돼.
   - 키워드를 생성할 때는 다음과 같은 규칙을 참고하도록 해:
-    (1) 중심적인 인명, 지명이 영상 제목에 포함되어 있다면, 자막보다 영상 제목을 우선 참조할 것
+    (1) 중심적인 인명, 지명이 영상 제목("${effectiveVideoTitle}")에 포함되어 있다면, 자막보다 영상 제목을 우선 참조할 것
          - 예: "영상 제목이 '신애라 이른 나이로 별세'이고, 통합 자막에서 '신애라'를 '시내라'로 표기하고 있다면, 키워드 추출 시 제목에 있는 '신애라'를 사용할 것 -> 핵심 키워드: '신애라 별세'"
     (2) 중심 사건의 핵심 인물 이름이 있다면 포함하고, 직업을 알 수 있다면 직업도 같이 포함할 것
          - 예: '이재명 기소', '차철남 신상공재 결정', '개그맨 박준형 사망' 등
@@ -93,7 +106,7 @@ ${youtubeText}
 다음은 요약하고자 하는 뉴스 기사 원문이야.
 
 [기사 내용]
-${articleText}
+${articleText || "기사 내용 없음"}
 
 뉴스 기사 전체를 아래 기준을 따라서 요약해줘:
 
