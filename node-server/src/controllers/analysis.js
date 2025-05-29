@@ -81,7 +81,7 @@ class AnalysisController {
 
       // [B] 키워드 기반 서치
       console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 후 필터링 중. . .`);
-      const allArticles = await searchNews(searchKeyword, 15, 'sim');
+      const allArticles = await searchNews(searchKeyword, 10, 'sim');
       const titlesOnly = allArticles.map((a, i) => `기사${i + 1}: ${a.title}`).join("\n");
       // [C] gemini 기사 필터링
       const relevancePrompt = `
@@ -227,7 +227,7 @@ ${searchKeyword}
         const altKeyword = await this.gemini.generateContentFromPrompt(retryingPrompt);
         console.log("\n📤 Gemini의 대체 키워드 응답:\n", altKeyword);
 
-        const altArticles = await searchNews(altKeyword, 10, 'date');
+        const altArticles = await searchNews(altKeyword,3, 'date');
         console.log(`\n🔍 대체 키워드 \"${altKeyword}\"로 검색된 기사 수: ${altArticles.length}`);
         altArticles.forEach((a, i) => {console.log(`  📄 기사${i + 1}: ${a.title}`);});
 
