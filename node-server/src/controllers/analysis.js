@@ -81,7 +81,7 @@ class AnalysisController {
 
       // [B] 키워드 기반 서치
       console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 후 필터링 중. . .`);
-      const allArticles = await searchNews(searchKeyword, 20, 'sim');
+      const allArticles = await searchNews(searchKeyword, 15, 'sim');
       const titlesOnly = allArticles.map((a, i) => `기사${i + 1}: ${a.title}`).join("\n");
       // [C] gemini 기사 필터링
       const relevancePrompt = `
@@ -149,16 +149,21 @@ ${titlesOnly}
         if (avgSim >= 85.0) trustLevel = "✅ 신빙성 높음";
         else if (avgSim >= 65.0) trustLevel = "⚠️ 불확실";
         else trustLevel = "❌ 신빙성 낮음";
+
         console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
 
         return res.json({
-          audioPath,
-          whisperText,
-          summaryCorrection: videoSummary,
           trustLevel,
           averageSimilarity: avgSim,
-          topArticles,
-          status: "success" });
+          searchKeyword,  // 🔍 핵심 키워드 포함
+          topArticles: topArticles.map(article => ({
+            press: article.press,
+            title: article.title,
+            link: article.link,
+            similarity: article.similarity
+          })),
+          status: "success"
+        });
       }
 
       // 🔁 반복적 반박 탐색 루프 시작
