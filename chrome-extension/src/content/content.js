@@ -5,6 +5,7 @@ console.log("[Trust Checker] 콘텐츠 스크립트 로드됨");
 //버튼 실행을 위한 전역변수 선언
 let analysisTriggered = false;
 let lastVideoId = null;
+let alreadyAnalyzedTitle = null;
 
 // 전역 분석 결과 객체
 window.analysisResults = {
@@ -112,8 +113,20 @@ async function runAnalysis() {
     console.group("[🔎] 분석 진행 중");
 
     // 1. 기본 정보 추출
-    analysisResults.videoId = new URLSearchParams(location.search).get("v");
-    analysisResults.title = document.querySelector("#title h1")?.innerText;
+      const currentVideoId = new URLSearchParams(location.search).get("v");
+      const currentTitle = document.querySelector("#title h1")?.innerText;
+
+    // 영상 중복 분석 방지
+    if (currentTitle === alreadyAnalyzedTitle) {
+      console.log("⚠️ 이미 분석된 영상입니다. 중복 분석 방지됨.");
+      console.groupEnd();
+      return;
+    }
+    alreadyAnalyzedVideoId = currentVideoId;
+    alreadyAnalyzedTitle = currentTitle;
+    analysisResults.videoId = currentVideoId;
+    analysisResults.title = currentTitle;
+
 
     // 채널 정보 (2024년 7월 기준)
     const channelElement =
@@ -295,5 +308,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log(`⚙️ 버튼 및 오버레이 표시 상태: ${display}`);
   }
 });
-
 
