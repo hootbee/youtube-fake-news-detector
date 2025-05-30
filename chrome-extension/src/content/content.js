@@ -116,15 +116,15 @@ async function runAnalysis() {
         searchKeyword,
         topArticles,
         rebuttal,
-        status
+        status,
       } = response?.analyzeResult || {};
 
       // 오버레이 1: 신뢰도
       let trustLabel = "";
       if (typeof averageTrustScore === "number") {
-        if (averageTrustScore*100 >= 80) trustLabel = "🟢 신뢰";
-        else if (averageTrustScore*100 >= 50) trustLabel = "🟡 불확실";
-        else if (averageTrustScore*100 >= 20) trustLabel = "🟠 의심";
+        if (averageTrustScore*100 >= 80) trustLabel = "🟢 매우 신뢰";
+        else if (averageTrustScore*100 >= 65) trustLabel = "🟡 신뢰";
+        else if (averageTrustScore*100 >= 50) trustLabel = "🟠 의심";
         else trustLabel = "🔴 불신";
       }
       showOverlay(
