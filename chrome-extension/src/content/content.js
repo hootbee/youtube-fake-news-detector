@@ -46,7 +46,7 @@ function insertOverlayTriggerButton(onClickCallback) {
 }
 
 // 오버레이 출력 함수
-function showOverlay(id, title, subtitle, content, top) {
+/*function showOverlay(id, title, subtitle, content, top) {
   let existing = document.getElementById(id);
   if (existing) existing.remove();
 
@@ -65,7 +65,7 @@ function showOverlay(id, title, subtitle, content, top) {
     ${content}
   `;
   document.body.appendChild(wrapper);
-}
+}*/
 
 // YouTube 자막 추출
 async function getCaptions() {
@@ -122,15 +122,16 @@ async function runAnalysis() {
       // 오버레이 1: 신뢰도
       let trustLabel = "";
       if (typeof averageTrustScore === "number") {
-        if (averageTrustScore >= 85) trustLabel = "🟢 신뢰";
-        else if (averageTrustScore >= 55) trustLabel = "🟡 불확실";
+        if (averageTrustScore*100 >= 80) trustLabel = "🟢 신뢰";
+        else if (averageTrustScore*100 >= 50) trustLabel = "🟡 불확실";
+        else if (averageTrustScore*100 >= 20) trustLabel = "🟠 의심";
         else trustLabel = "🔴 불신";
       }
       showOverlay(
         "trust-overlay",
         "✨ 신뢰도",
         "📌 유사도 기반 신뢰도",
-        `<p>${trustLabel} (${averageTrustScore?.toFixed(2) ?? "?"}%)</p>`,
+        `<p>${trustLabel} (${(averageTrustScore * 100).toFixed(2)}%)</p>`,
         "80px"
       );
 
@@ -153,7 +154,7 @@ async function runAnalysis() {
         "✨ 키워드",
         "📌 연관 키워드",
         `<p>${searchKeyword || "키워드 없음"}</p>`,
-        "360px"
+        "550px"
       );
 
       // 오버레이 4: 반박 기사
@@ -164,7 +165,7 @@ async function runAnalysis() {
           `📌 반박 기사 (키워드: ${rebuttal.searchKeyword})`,
           `<p><strong>${rebuttal.press}</strong> - <a href="${rebuttal.link}" target="_blank">${rebuttal.title}</a><br/>
           💬 ${rebuttal.rebuttalSentence}</p>`,
-          "500px"
+          "650px"
         );
       } else if (status === "inconclusive") {
         showOverlay(
