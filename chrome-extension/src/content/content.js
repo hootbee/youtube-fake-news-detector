@@ -199,7 +199,7 @@ async function runAnalysis() {
         showOverlay(
           "trust-overlay",
           "✨ 신뢰도",
-          "📌 유사도 기반 신뢰도",
+          "📌 신뢰도 판단 불가",
             `<p>관련 기사가 충분하지 않아 신뢰도를 판단할 수 없습니다.</p>`,
       );
 
@@ -207,7 +207,7 @@ async function runAnalysis() {
         showOverlay(
             "article-overlay",
             "✨ 관련 기사",
-            "📌 신뢰도 TOP 5",
+            "📌 관련 기사 부족",
             `<p>관련 기사가 충분하지 않아 기사 목록을 판단할 수 없습니다.</p>`,
         );
       }
