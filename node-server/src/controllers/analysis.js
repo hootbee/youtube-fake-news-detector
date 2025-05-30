@@ -81,7 +81,7 @@ class AnalysisController {
 
       // [B] 키워드 기반 서치
       console.log(`\n🔍 키워드 "${searchKeyword}" 기반 기사 검색 후 필터링 중. . .`);
-      const allArticles = await searchNews(searchKeyword, 10, 'sim');
+      const allArticles = await searchNews(searchKeyword, 15, 'sim');
       const titlesOnly = allArticles.map((a, i) => `기사${i + 1}: ${a.title}`).join("\n");
       // [C] gemini 기사 필터링
       const relevancePrompt = `
@@ -159,15 +159,18 @@ ${titlesOnly}
 
         let trustLevel = "";
         if (avgTrust >= 0.80) trustLevel = "✅ 신빙성 높음";
-        else if (avgTrust >= 0.60) trustLevel = "⚠️ 불확실";
+        else if (avgTrust >= 0.65) trustLevel = "👍 신뢰됨";
+        else if (avgTrust >= 0.50) trustLevel = "⚠️ 다소 의심됨";
         else trustLevel = "❌ 신빙성 낮음";
 
-        console.log(`\n🧾 신뢰도 판단 결과: ${trustLevel}`);
+        console.log(`\n🧾 평균 최종 신뢰도: ${(avgTrust * 100).toFixed(2)}%`);
+        console.log(`  신뢰도 판단 결과: ${trustLevel}`);
 
         return res.json({
           trustLevel,
           averageTrustScore: avgTrust,
           searchKeyword,
+          matchedArticles,
           topArticles: topArticles.map(article => ({
             press: article.press,
             title: article.title,
@@ -227,7 +230,7 @@ ${searchKeyword}
         const altKeyword = await this.gemini.generateContentFromPrompt(retryingPrompt);
         console.log("\n📤 Gemini의 대체 키워드 응답:\n", altKeyword);
 
-        const altArticles = await searchNews(altKeyword,3, 'date');
+        const altArticles = await searchNews(altKeyword, 10, 'date');
         console.log(`\n🔍 대체 키워드 \"${altKeyword}\"로 검색된 기사 수: ${altArticles.length}`);
         altArticles.forEach((a, i) => {console.log(`  📄 기사${i + 1}: ${a.title}`);});
 
@@ -290,6 +293,7 @@ ${altArticles.map((a, i) => `기사${i + 1}: ${a.title}\n내용: ${a.summary}`).
         console.log("\n❌ 허위 가능성 높음: 신뢰할 수 없는 영상일 수 있습니다.");
         return res.json({
           trustLevel: "❌ 허위 가능성 높음",
+          rebuttalFound,
           rebuttal: {
             press: rebuttalResult.press, // 언론사명
             title: rebuttalResult.title, // 기사 제목
