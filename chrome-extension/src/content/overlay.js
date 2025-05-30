@@ -47,7 +47,7 @@ function showOverlay(id, mainTitle, subTitle, content) {
     borderRadius: "12px",
     zIndex: "1",
     maxWidth: "100%",
-    width: "400px",
+    width: "450px",
     fontFamily: "Segoe UI, sans-serif",
     fontSize: "13px",
     boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
