@@ -119,6 +119,8 @@ async function runAnalysis() {
         status,
       } = response?.analyzeResult || {};
 
+      const matchedArticles = topArticles ?? [];
+
       // 오버레이 1: 신뢰도
       let trustLabel = "";
       if (typeof averageTrustScore === "number") {
@@ -127,53 +129,86 @@ async function runAnalysis() {
         else if (averageTrustScore*100 >= 50) trustLabel = "🟠 의심";
         else trustLabel = "🔴 불신";
       }
+
+      if (matchedArticles.length >= 5) {
       showOverlay(
         "trust-overlay",
         "✨ 신뢰도",
         "📌 유사도 기반 신뢰도",
         `<p>${trustLabel} (${(averageTrustScore * 100).toFixed(2)}%)</p>`,
-        "80px"
       );
 
-      // 오버레이 2: 기사 리스트
-      showOverlay(
-        "article-overlay",
-        "✨ 관련 기사",
-        "📌 신뢰도 TOP 5",
-        topArticles?.map(
-          (a, i) =>
-            `<p><strong>${i + 1}. ${a.press}</strong> - <a href="${a.link}" target="_blank">${a.title}</a><br/>
+        // 오버레이 2: 기사 리스트
+        showOverlay(
+            "article-overlay",
+            "✨ 관련 기사",
+            "📌 신뢰도 TOP 5",
+            topArticles?.map(
+                (a, i) =>
+                    `<p><strong>${i + 1}. ${a.press}</strong> - <a href="${a.link}" target="_blank">${a.title}</a><br/>
             🧠 신뢰점수: ${a.trustScore ?? "?"} | 🆕 최신도: ${a.freshness ?? "?"} | 🤝 유사도: ${a.similarity ?? "?"}</p>`
-        ).join("") || "<p>관련 기사 없음</p>",
-        "220px"
-      );
-
-      // 오버레이 3: 키워드
-      showOverlay(
-        "keyword-overlay",
-        "✨ 키워드",
-        "📌 연관 키워드",
-        `<p>${searchKeyword || "키워드 없음"}</p>`,
-        "550px"
-      );
-
-      // 오버레이 4: 반박 기사
-      if (status === "rebuttal_success" && rebuttal) {
-        showOverlay(
-          "rebuttal-overlay",
-          "❌ 반증 발견",
-          `📌 반박 기사 (키워드: ${rebuttal.searchKeyword})`,
-          `<p><strong>${rebuttal.press}</strong> - <a href="${rebuttal.link}" target="_blank">${rebuttal.title}</a><br/>
-          💬 ${rebuttal.rebuttalSentence}</p>`,
-          "650px"
+            ).join("") || "<p>관련 기사 없음</p>",
         );
-      } else if (status === "inconclusive") {
+
+        // 오버레이 3: 키워드
         showOverlay(
-          "rebuttal-overlay",
-          "❓ 판단 보류",
-          "📌 반박 기사 없음",
-          `<p>3회 재검색에도 반박 기사를 찾지 못했습니다.</p>`,
-          "500px"
+            "keyword-overlay",
+            "✨ 키워드",
+            "📌 연관 키워드",
+            `<p>${searchKeyword || "키워드 없음"}</p>`,
+        );
+      }
+
+      else if (matchedArticles.length > 0 && matchedArticles.length < 5) {
+        //오버레이 1: 신뢰도
+        showOverlay(
+          "trust-overlay",
+          "✨ 신뢰도",
+          "📌 유사도 기반 신뢰도",
+          `<p>${trustLabel} (${(averageTrustScore * 100).toFixed(2)}%)</p>`,
+      );
+
+        // 오버레이 4: 반박 기사
+        if (status === "rebuttal_success" && rebuttal) {
+          showOverlay(
+              "rebuttal-overlay",
+              "❌ 반증 발견",
+              `📌 반박 기사 (키워드: ${rebuttal.searchKeyword})`,
+              `<p><strong>${rebuttal.press}</strong> - <a href="${rebuttal.link}" target="_blank">${rebuttal.title}</a><br/>
+          💬 ${rebuttal.rebuttalSentence}</p>`,
+          );
+        } else if (status === "inconclusive") {
+          showOverlay(
+              "rebuttal-overlay",
+              "❓ 판단 보류",
+              "📌 반박 기사 없음",
+              `<p>3회 재검색에도 반박 기사를 찾지 못했습니다.</p>`,
+          );
+
+          // 오버레이 3: 키워드
+        showOverlay(
+            "keyword-overlay",
+            "✨ 키워드",
+            "📌 연관 키워드",
+            `<p>${searchKeyword || "키워드 없음"}</p>`,
+        );
+        }
+      }
+      else if (rebuttalFound === true) {
+        //오버레이 1: 신뢰도
+        showOverlay(
+          "trust-overlay",
+          "✨ 신뢰도",
+          "📌 유사도 기반 신뢰도",
+            `<p>관련 기사가 충분하지 않아 신뢰도를 판단할 수 없습니다.</p>`,
+      );
+
+         // 오버레이 3: 키워드
+        showOverlay(
+            "article-overlay",
+            "✨ 관련 기사",
+            "📌 신뢰도 TOP 5",
+            `<p>관련 기사가 충분하지 않아 기사 목록을 판단할 수 없습니다.</p>`,
         );
       }
     });
