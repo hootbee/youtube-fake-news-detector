@@ -117,9 +117,9 @@ async function runAnalysis() {
         topArticles,
         rebuttal,
         status,
+        rebuttalFound,
+          matchedArticles,
       } = response?.analyzeResult || {};
-
-      const matchedArticles = topArticles ?? [];
 
       // 오버레이 1: 신뢰도
       let trustLabel = "";
