@@ -134,21 +134,28 @@ async function runAnalysis() {
       showOverlay(
         "trust-overlay",
         "✨ 신뢰도",
-        "📌 유사도 기반 신뢰도",
+        "📌 신뢰도는 관련 기사의 영상과의 유사성, 언론사의 공신력, 발행일을 고려하여 계산되었습니다.",
         `<p>${trustLabel} (${(averageTrustScore * 100).toFixed(2)}%)</p>`,
       );
 
-        // 오버레이 2: 기사 리스트
-        showOverlay(
-            "article-overlay",
-            "✨ 관련 기사",
-            "📌 신뢰도 TOP 5",
-            topArticles?.map(
-                (a, i) =>
-                    `<p><strong>${i + 1}. ${a.press}</strong> - <a href="${a.link}" target="_blank">${a.title}</a><br/>
-            🧠 신뢰점수: ${a.trustScore ?? "?"} | 🆕 최신도: ${a.freshness ?? "?"} | 🤝 유사도: ${a.similarity ?? "?"}</p>`
-            ).join("") || "<p>관련 기사 없음</p>",
-        );
+      // 오버레이 2: 기사 리스트
+      showOverlay(
+        "article-overlay",
+        "✨ 관련 기사",
+        "📌 신뢰도 TOP 5",
+        topArticles?.map((a, i) => {
+          const trustScore = ((a.trustScore ?? 0) * 100).toFixed(2);
+          const similarity = (a.similarity ?? 0).toFixed(2);
+          const authority = ((a.credibility ?? 0) * 100).toFixed(2);
+          const freshness = ((a.freshness ?? 0) * 100).toFixed(2);
+          return `
+            <p><strong>${i + 1}. ${a.press}</strong> - <a href="${a.link}" target="_blank">${a.title}</a><br/>
+            ✅ 신뢰도: ${trustScore}%<br/>
+            🧠 유사도: ${similarity} | 🗞️ 언론공신도: ${authority} | 🆕 발행최신도: ${freshness}</p>
+          `;
+        }).join("") || "<p>관련 기사 없음</p>",
+        "220px"
+      );
 
         // 오버레이 3: 키워드
         showOverlay(
