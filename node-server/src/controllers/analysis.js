@@ -306,6 +306,7 @@ ${altArticles.map((a, i) => `기사${i + 1}: ${a.title}\n내용: ${a.summary}`).
       } else {
         console.warn("\n❓ 판단 보류: 3회 반복에도 반증기사나 문장을 찾지 못했습니다. 사용자가 직접 사건에 대해서 알아보는 것이 좋습니다.");
         return res.json({
+          rebuttalFound,
           trustLevel: "⚠️ 판단 유보",
           status: "inconclusive"
         });
