@@ -118,7 +118,7 @@ async function runAnalysis() {
         rebuttal,
         status,
         rebuttalFound,
-          matchedArticles,
+        matchedArticles,
       } = response?.analyzeResult || {};
 
       // 오버레이 1: 신뢰도
