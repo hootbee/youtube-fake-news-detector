@@ -1,1 +1,0 @@
-whisper torch yt-dlp axios cheerio dotenv flask sentence_transformers
